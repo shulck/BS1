@@ -1,26 +1,12 @@
-//
-//  NotificationManager.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
-//
-//  NotificationManager.swift
-//  BandSync
-//
-//  Created by Claude AI on 31.03.2025.
-//
-
 import Foundation
 import UserNotifications
 import FirebaseMessaging
+import UIKit
 
 final class NotificationManager {
     static let shared = NotificationManager()
     
-    private init() {} 
+    private init() {}
     
     // Запрос разрешения на уведомления
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
@@ -75,11 +61,16 @@ final class NotificationManager {
         }
     }
     
+    // Отменить конкретное уведомление
+    func cancelNotification(withIdentifier identifier: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+    }
+    
     // Запланировать локальное уведомление
     func scheduleLocalNotification(title: String, body: String, date: Date, identifier: String, completion: @escaping (Bool) -> Void) {
         let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
+        content.title = NSLocalizedString("Event Tomorrow", comment: "")
+        content.body = NSLocalizedString("\(title) - \(formatTime(date))", comment: "")
         content.sound = .default
         
         // Создаем компоненты даты для триггера
@@ -109,8 +100,8 @@ final class NotificationManager {
         if let dayBefore = Calendar.current.date(byAdding: .day, value: -1, to: event.date) {
             if dayBefore > Date() {
                 scheduleLocalNotification(
-                    title: "Event Tomorrow".localized,
-                    body: "\(event.title) - \(formatTime(event.date))".localized,
+                    title: NSLocalizedString("Event Tomorrow", comment: ""),
+                    body: NSLocalizedString("\(event.title) - \(formatTime(event.date))", comment: ""),
                     date: dayBefore,
                     identifier: "event_day_before_\(event.id ?? UUID().uuidString)",
                     completion: { _ in }
@@ -122,8 +113,8 @@ final class NotificationManager {
         if let hourBefore = Calendar.current.date(byAdding: .hour, value: -1, to: event.date) {
             if hourBefore > Date() {
                 scheduleLocalNotification(
-                    title: "Event in 1 hour".localized,
-                    body: "\(event.title) - \(formatTime(event.date))".localized,
+                    title: NSLocalizedString("Event in 1 hour", comment: ""),
+                    body: NSLocalizedString("\(event.title) - \(formatTime(event.date))", comment: ""),
                     date: hourBefore,
                     identifier: "event_hour_before_\(event.id ?? UUID().uuidString)",
                     completion: { _ in }
@@ -132,39 +123,15 @@ final class NotificationManager {
         }
     }
     
-    // Запланировать уведомление о задаче
-    func scheduleTaskNotification(task: TaskModel) {
-        // Проверяем, что срок задачи в будущем и задача не выполнена
-        guard task.dueDate > Date(), !task.completed else { return }
-        
-        // Уведомление за день до срока
-        if let dayBefore = Calendar.current.date(byAdding: .day, value: -1, to: task.dueDate) {
-            if dayBefore > Date() {
-                scheduleLocalNotification(
-                    title: "Task due tomorrow".localized,
-                    body: task.title,
-                    date: dayBefore,
-                    identifier: "task_day_before_\(task.id ?? UUID().uuidString)",
-                    completion: { _ in }
-                )
-            }
-        }
-    }
-    
-    // Отменить все запланированные уведомления
-    func cancelAllNotifications() {
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-    }
-    
-    // Отменить конкретное уведомление
-    func cancelNotification(withIdentifier identifier: String) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
-    }
-    
     // Форматирование времени для уведомлений
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    // Отменить все уведомления
+    func cancelAllNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }
 }

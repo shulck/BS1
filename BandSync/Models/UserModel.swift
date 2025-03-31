@@ -1,14 +1,6 @@
-//
-//  UserModel.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
 import Foundation
 
-struct UserModel: Identifiable, Codable {
+struct UserModel: Identifiable, Codable, Equatable {
     let id: String
     let email: String
     let name: String
@@ -16,10 +8,22 @@ struct UserModel: Identifiable, Codable {
     let groupId: String?
     let role: UserRole
 
-    enum UserRole: String, Codable, CaseIterable {
+    enum UserRole: String, Codable, CaseIterable, Identifiable {
         case admin = "Admin"
         case manager = "Manager"
         case musician = "Musician"
         case member = "Member"
+        
+        var id: String { rawValue }
+    }
+    
+    // Реализация Equatable
+    static func == (lhs: UserModel, rhs: UserModel) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.email == rhs.email &&
+               lhs.name == rhs.name &&
+               lhs.phone == rhs.phone &&
+               lhs.groupId == rhs.groupId &&
+               lhs.role == rhs.role
     }
 }
