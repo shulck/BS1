@@ -1,19 +1,14 @@
-//
-//  AddEventView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//  Updated by Claude AI on 31.03.2025.
-//
-
 import SwiftUI
+import MapKit
 
 struct AddEventView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var setlistService = SetlistService.shared
     @State private var showingSetlistSelector = false
+    @State private var showingLocationPicker = false
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var selectedLocation: LocationDetails?
     
     @State private var event = Event(
         title: "",
@@ -58,7 +53,7 @@ struct AddEventView: View {
                         }
                     }
                     
-                    // Новое поле для сетлиста
+                    // Поле для сетлиста
                     if event.type == .concert || event.type == .rehearsal {
                         Button {
                             showingSetlistSelector = true
@@ -75,14 +70,46 @@ struct AddEventView: View {
                     }
                 }
 
-                Section(header: Text("Локация и гонорар")) {
-                    TextField("Место", text: Binding(
-                        get: { event.location ?? "" },
-                        set: { event.location = $0.isEmpty ? nil : $0 }
-                    ))
+                Section(header: Text("Локация")) {
+                    // Кнопка для выбора локации на карте
+                    Button(action: {
+                        showingLocationPicker = true
+                    }) {
+                        HStack {
+                            Image(systemName: "map")
+                                .foregroundColor(.blue)
+                            Text("Выбрать на карте")
+                        }
+                    }
                     
+                    // Отображение выбранной локации
+                    if let location = selectedLocation {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(location.name)
+                                .font(.headline)
+                            Text(location.address)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 4)
+                        
+                        // Кнопка для сброса выбранной локации
+                        Button("Сбросить локацию") {
+                            selectedLocation = nil
+                            event.location = nil
+                        }
+                        .foregroundColor(.red)
+                    } else {
+                        TextField("Место проведения", text: Binding(
+                            get: { event.location ?? "" },
+                            set: { event.location = $0.isEmpty ? nil : $0 }
+                        ))
+                    }
+                }
+
+                Section(header: Text("Гонорар")) {
                     HStack {
-                        TextField("Гонорар", value: Binding(
+                        TextField("Сумма", value: Binding(
                             get: { event.fee ?? 0 },
                             set: { event.fee = $0 > 0 ? $0 : nil }
                         ), formatter: NumberFormatter())
@@ -150,17 +177,6 @@ struct AddEventView: View {
                             .foregroundColor(.red)
                     }
                 }
-                
-                // Индикатор загрузки
-                if isLoading {
-                    Section {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
-                        }
-                    }
-                }
             }
             .navigationTitle("Новое событие")
             .toolbar {
@@ -180,6 +196,24 @@ struct AddEventView: View {
             .sheet(isPresented: $showingSetlistSelector) {
                 SetlistSelectorView(selectedSetlistId: $event.setlistId)
             }
+            .sheet(isPresented: $showingLocationPicker) {
+                LocationPickerView(selectedLocation: $selectedLocation)
+                    .onDisappear {
+                        // Обновляем локацию события при выборе места на карте
+                        if let location = selectedLocation {
+                            event.location = location.name + ", " + location.address
+                        }
+                    }
+            }
+            .overlay(Group {
+                if isLoading {
+                    ProgressView()
+                        .padding()
+                        .background(Color.white.opacity(0.8))
+                        .cornerRadius(8)
+                        .shadow(radius: 3)
+                }
+            })
             .onAppear {
                 if let groupId = AppState.shared.user?.groupId {
                     setlistService.fetchSetlists(for: groupId)
@@ -212,6 +246,8 @@ struct AddEventView: View {
                 isLoading = false
                 
                 if success {
+                    // Планируем уведомления для событий
+                    NotificationManager.shared.scheduleEventNotification(event: event)
                     dismiss()
                 } else {
                     errorMessage = "Не удалось сохранить событие"

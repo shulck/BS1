@@ -54,27 +54,20 @@ final class UserService: ObservableObject {
             if let data = snapshot.data() {
                 print("UserService: данные пользователя получены: \(data)")
                 
-                do {
-                    // Преобразуем данные с преобразованием Timestamp в Date, если необходимо
-                    let processedData = data
-                    
-                    let jsonData = try JSONSerialization.data(withJSONObject: processedData)
-                    print("UserService: данные сериализованы в JSON")
-                    
-                    let decoder = JSONDecoder()
-                    let user = try decoder.decode(UserModel.self, from: jsonData)
-                    print("UserService: данные успешно декодированы в UserModel")
-                    
-                    DispatchQueue.main.async {
-                        self?.currentUser = user
-                        print("UserService: currentUser установлен")
-                        completion(true)
-                    }
-                } catch {
-                    print("UserService: ОШИБКА при парсинге пользователя: \(error)")
-                    DispatchQueue.main.async {
-                        completion(false)
-                    }
+                // Создаем UserModel напрямую из данных, без сериализации в JSON
+                let user = UserModel(
+                    id: data["id"] as? String ?? uid,
+                    email: data["email"] as? String ?? "",
+                    name: data["name"] as? String ?? "",
+                    phone: data["phone"] as? String ?? "",
+                    groupId: data["groupId"] as? String,
+                    role: UserModel.UserRole(rawValue: data["role"] as? String ?? "Member") ?? .member
+                )
+                
+                DispatchQueue.main.async {
+                    self?.currentUser = user
+                    print("UserService: currentUser установлен")
+                    completion(true)
                 }
             } else {
                 print("UserService: данные пользователя отсутствуют")

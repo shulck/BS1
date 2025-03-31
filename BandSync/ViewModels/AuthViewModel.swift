@@ -26,6 +26,8 @@ final class AuthViewModel: ObservableObject {
                 switch result {
                 case .success:
                     self?.isAuthenticated = true
+                    // Добавляем обновление глобального состояния
+                    AppState.shared.refreshAuthState()
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }
