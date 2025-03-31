@@ -16,7 +16,7 @@
 import Foundation
 import FirebaseFirestore
 
-struct PermissionModel: Identifiable, Codable {
+struct PermissionModel: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
     var groupId: String
     var modules: [ModulePermission]

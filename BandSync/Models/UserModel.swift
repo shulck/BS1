@@ -6,7 +6,7 @@ struct UserModel: Identifiable, Codable, Equatable {
     let name: String
     let phone: String
     let groupId: String?
-    let role: UserRole
+    var role: UserRole
 
     enum UserRole: String, Codable, CaseIterable, Identifiable {
         case admin = "Admin"

@@ -20,8 +20,17 @@ final class CacheService {
     static let shared = CacheService()
     
     private let cacheDirectory: URL
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
+    private let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .iso8601
+        return e
+    }()
+
+    private let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.dateDecodingStrategy = .iso8601
+        return d
+    }()
     
     private init() {
         // Получаем папку для кэширования

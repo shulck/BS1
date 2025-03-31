@@ -157,9 +157,15 @@ struct EventDetailView: View {
                 }
                 
                 // Организатор
-                if let organizerName = event.organizerName, !organizerName.isEmpty ||
-                   let organizerEmail = event.organizerEmail, !organizerEmail.isEmpty ||
-                   let organizerPhone = event.organizerPhone, !organizerPhone.isEmpty {
+                let hasOrganizerInfo = [
+                    event.organizerName,
+                    event.organizerEmail,
+                    event.organizerPhone
+                ]
+                .compactMap { $0 }
+                .contains { !$0.isEmpty }
+
+                if hasOrganizerInfo {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Организатор")
