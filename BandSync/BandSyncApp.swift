@@ -3,14 +3,7 @@
 //  BandSync
 //
 //  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
-//
-//  BandSyncApp.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
+//  Updated by Claude AI on 31.03.2025.
 //
 
 import SwiftUI
@@ -18,10 +11,8 @@ import FirebaseCore
 
 @main
 struct BandSyncApp: App {
-
-    init() {
-        FirebaseApp.configure()
-    }
+    // Регистрируем AppDelegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     var body: some Scene {
         WindowGroup {

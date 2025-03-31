@@ -10,6 +10,7 @@
 		C34707F42D89FEE10022B17D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C34707F32D89FEE10022B17D /* FirebaseFirestore */; };
 		C375284D2D89F6B400A7F2D2 /* FSCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = C375284C2D89F6B400A7F2D2 /* FSCalendar */; };
 		C37528522D89F95000A7F2D2 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C37528512D89F95000A7F2D2 /* FirebaseAuth */; };
+		FA2BF9662D9AD4960008D069 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA2BF9652D9AD4960008D069 /* FirebaseMessaging */; };
 		FACD945F2D90F38A0085E16F /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FACD945E2D90F38A0085E16F /* Vision.framework */; };
 		FACD94612D90F39A0085E16F /* VisionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FACD94602D90F39A0085E16F /* VisionKit.framework */; };
 		FACD94632D90F4AC0085E16F /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FACD94622D90F4AC0085E16F /* FirebaseStorage */; };
@@ -68,6 +69,7 @@
 			files = (
 				FACD94612D90F39A0085E16F /* VisionKit.framework in Frameworks */,
 				FACD945F2D90F38A0085E16F /* Vision.framework in Frameworks */,
+				FA2BF9662D9AD4960008D069 /* FirebaseMessaging in Frameworks */,
 				C375284D2D89F6B400A7F2D2 /* FSCalendar in Frameworks */,
 				C37528522D89F95000A7F2D2 /* FirebaseAuth in Frameworks */,
 				C34707F42D89FEE10022B17D /* FirebaseFirestore in Frameworks */,
@@ -144,6 +146,7 @@
 				C37528512D89F95000A7F2D2 /* FirebaseAuth */,
 				C34707F32D89FEE10022B17D /* FirebaseFirestore */,
 				FACD94622D90F4AC0085E16F /* FirebaseStorage */,
+				FA2BF9652D9AD4960008D069 /* FirebaseMessaging */,
 			);
 			productName = BandSync;
 			productReference = C33C9FA32D89F067000ACF7B /* BandSync.app */;
@@ -313,7 +316,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"BandSync/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = T5DQ99J442;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -359,7 +362,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"BandSync/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = T5DQ99J442;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -674,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C37528502D89F95000A7F2D2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		FA2BF9652D9AD4960008D069 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C37528502D89F95000A7F2D2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 		FACD94622D90F4AC0085E16F /* FirebaseStorage */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -3,85 +3,214 @@
 //  BandSync
 //
 //  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
-//
-//  SetlistService.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
+//  Updated by Claude AI on 31.03.2025.
 //
 
 import Foundation
 import FirebaseFirestore
-
+import Network
 
 final class SetlistService: ObservableObject {
     static let shared = SetlistService()
     
     @Published var setlists: [Setlist] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    @Published var isOfflineMode: Bool = false
 
     private let db = Firestore.firestore()
+    private var networkMonitor = NWPathMonitor()
+    private var hasLoadedFromCache = false
+    
+    init() {
+        // Инициализация мониторинга сети
+        setupNetworkMonitoring()
+    }
+    
+    // Настройка мониторинга сети
+    private func setupNetworkMonitoring() {
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                let isConnected = path.status == .satisfied
+                self?.isOfflineMode = !isConnected
+                
+                // При восстановлении соединения, обновляем данные
+                if isConnected && self?.hasLoadedFromCache == true {
+                    if let groupId = AppState.shared.user?.groupId {
+                        self?.fetchSetlists(for: groupId)
+                    }
+                }
+            }
+        }
+        
+        let queue = DispatchQueue(label: "NetworkMonitor.Setlist")
+        networkMonitor.start(queue: queue)
+    }
 
     func fetchSetlists(for groupId: String) {
+        isLoading = true
+        errorMessage = nil
+        
+        // Проверяем соединение с сетью
+        if isOfflineMode {
+            loadFromCache(groupId: groupId)
+            return
+        }
+        
         db.collection("setlists")
             .whereField("groupId", isEqualTo: groupId)
             .getDocuments { [weak self] snapshot, error in
-                if let docs = snapshot?.documents {
-                    let items = docs.compactMap { try? $0.data(as: Setlist.self) }
-                    DispatchQueue.main.async {
-                        self?.setlists = items
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if let error = error {
+                        self.errorMessage = "Ошибка загрузки сетлистов: \(error.localizedDescription)"
+                        self.loadFromCache(groupId: groupId)
+                        return
                     }
-                } else {
-                    print("Ошибка загрузки сетлистов: \(error?.localizedDescription ?? "неизвестно")")
+                    
+                    if let docs = snapshot?.documents {
+                        let items = docs.compactMap { try? $0.data(as: Setlist.self) }
+                        self.setlists = items
+                        
+                        // Сохраняем в кэш
+                        CacheService.shared.cacheSetlists(items, forGroupId: groupId)
+                    }
                 }
             }
     }
+    
+    // Загрузка из кэша
+    private func loadFromCache(groupId: String) {
+        if let cachedSetlists = CacheService.shared.getCachedSetlists(forGroupId: groupId) {
+            self.setlists = cachedSetlists
+            self.hasLoadedFromCache = true
+            self.isLoading = false
+            
+            if isOfflineMode {
+                self.errorMessage = "Loaded from cache (offline mode)"
+            }
+        } else {
+            self.errorMessage = "No data available in offline mode"
+            self.isLoading = false
+        }
+    }
 
     func addSetlist(_ setlist: Setlist, completion: @escaping (Bool) -> Void) {
+        isLoading = true
+        errorMessage = nil
+        
+        // Проверяем соединение с сетью
+        if isOfflineMode {
+            errorMessage = "Cannot add setlists in offline mode"
+            isLoading = false
+            completion(false)
+            return
+        }
+        
         do {
-            _ = try db.collection("setlists").addDocument(from: setlist) { error in
-                if let error = error {
-                    print("Ошибка добавления сетлиста: \(error.localizedDescription)")
-                    completion(false)
-                } else {
-                    self.fetchSetlists(for: setlist.groupId)
-                    completion(true)
+            _ = try db.collection("setlists").addDocument(from: setlist) { [weak self] error in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if let error = error {
+                        self.errorMessage = "Ошибка добавления сетлиста: \(error.localizedDescription)"
+                        completion(false)
+                    } else {
+                        self.fetchSetlists(for: setlist.groupId)
+                        completion(true)
+                    }
                 }
             }
         } catch {
-            print("Ошибка сериализации сетлиста: \(error)")
-            completion(false)
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.errorMessage = "Ошибка сериализации сетлиста: \(error)"
+                completion(false)
+            }
         }
     }
 
     func updateSetlist(_ setlist: Setlist, completion: @escaping (Bool) -> Void) {
-        guard let id = setlist.id else { return }
+        guard let id = setlist.id else {
+            completion(false)
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        // Проверяем соединение с сетью
+        if isOfflineMode {
+            errorMessage = "Cannot update setlists in offline mode"
+            isLoading = false
+            completion(false)
+            return
+        }
+        
         do {
-            try db.collection("setlists").document(id).setData(from: setlist) { error in
-                if let error = error {
-                    print("Ошибка обновления сетлиста: \(error.localizedDescription)")
-                    completion(false)
-                } else {
-                    self.fetchSetlists(for: setlist.groupId)
-                    completion(true)
+            try db.collection("setlists").document(id).setData(from: setlist) { [weak self] error in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if let error = error {
+                        self.errorMessage = "Ошибка обновления сетлиста: \(error.localizedDescription)"
+                        completion(false)
+                    } else {
+                        self.fetchSetlists(for: setlist.groupId)
+                        completion(true)
+                    }
                 }
             }
         } catch {
-            print("Ошибка сериализации: \(error)")
-            completion(false)
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.errorMessage = "Ошибка сериализации: \(error)"
+                completion(false)
+            }
         }
     }
 
     func deleteSetlist(_ setlist: Setlist) {
         guard let id = setlist.id else { return }
-        db.collection("setlists").document(id).delete { error in
-            if let error = error {
-                print("Ошибка удаления сетлиста: \(error.localizedDescription)")
-            } else if let groupId = AppState.shared.user?.groupId {
-                self.fetchSetlists(for: groupId)
+        
+        isLoading = true
+        errorMessage = nil
+        
+        // Проверяем соединение с сетью
+        if isOfflineMode {
+            errorMessage = "Cannot delete setlists in offline mode"
+            isLoading = false
+            return
+        }
+        
+        db.collection("setlists").document(id).delete { [weak self] error in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if let error = error {
+                    self.errorMessage = "Ошибка удаления сетлиста: \(error.localizedDescription)"
+                } else if let groupId = AppState.shared.user?.groupId {
+                    self.fetchSetlists(for: groupId)
+                }
             }
         }
+    }
+    
+    // Получение сетлиста по ID
+    func getSetlist(by id: String) -> Setlist? {
+        return setlists.first { $0.id == id }
+    }
+    
+    deinit {
+        networkMonitor.cancel()
     }
 }

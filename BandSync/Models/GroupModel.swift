@@ -16,10 +16,19 @@
 import Foundation
 import FirebaseFirestore
 
-struct GroupModel: Identifiable, Codable {
+struct GroupModel: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
     var name: String
     var code: String
     var members: [String]
     var pendingMembers: [String]
+    
+    // Реализация Equatable для сравнения объектов
+    static func == (lhs: GroupModel, rhs: GroupModel) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.name == rhs.name &&
+               lhs.code == rhs.code &&
+               lhs.members == rhs.members &&
+               lhs.pendingMembers == rhs.pendingMembers
+    }
 }
