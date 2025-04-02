@@ -68,12 +68,16 @@ struct AddMerchView: View {
                     }
                 }
 
-                Section(header: Text("Остатки по размерам")) {
-                    Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
-                    Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
-                    Stepper("L: \(stock.L)", value: $stock.L, in: 0...999)
-                    Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
-                    Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
+                Section(header: Text(category == .clothing ? "Остатки по размерам" : "Количество товара")) {
+                    if category == .clothing {
+                        Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
+                        Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
+                        Stepper("L: \(stock.L)", value: $stock.L, in: 0...999)
+                        Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
+                        Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
+                    } else {
+                        Stepper("Количество: \(stock.S)", value: $stock.S, in: 0...999)
+                    }
                 }
             }
             .navigationTitle("Добавить товар")

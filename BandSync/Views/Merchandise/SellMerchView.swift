@@ -5,14 +5,6 @@
 //  Created by Oleksandr Kuziakin on 31.03.2025.
 //
 
-
-//
-//  SellMerchView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
 import SwiftUI
 
 struct SellMerchView: View {
@@ -26,10 +18,15 @@ struct SellMerchView: View {
     var body: some View {
         NavigationView {
             Form {
-                Picker("Размер", selection: $size) {
-                    ForEach(["S", "M", "L", "XL", "XXL"], id: \.self) { size in
-                        Text(size)
+                if item.category == .clothing {
+                    Picker("Размер", selection: $size) {
+                        ForEach(["S", "M", "L", "XL", "XXL"], id: \.self) { size in
+                            Text(size)
+                        }
                     }
+                } else {
+                    // Для других категорий размер не выбираем, используем фиктивное значение
+                    let _ = { size = "one_size" }()
                 }
 
                 Stepper("Количество: \(quantity)", value: $quantity, in: 1...999)

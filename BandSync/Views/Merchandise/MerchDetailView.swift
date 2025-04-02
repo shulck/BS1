@@ -123,33 +123,40 @@ struct MerchDetailView: View {
     // Секция с остатками
     private var stockSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Остатки по размерам")
-                .font(.headline)
+            if item.category == .clothing {
+                Text("Остатки по размерам")
+                    .font(.headline)
 
-            HStack {
-                Text("S:")
-                Spacer()
-                Text("\(item.stock.S)")
-            }
-            HStack {
-                Text("M:")
-                Spacer()
-                Text("\(item.stock.M)")
-            }
-            HStack {
-                Text("L:")
-                Spacer()
-                Text("\(item.stock.L)")
-            }
-            HStack {
-                Text("XL:")
-                Spacer()
-                Text("\(item.stock.XL)")
-            }
-            HStack {
-                Text("XXL:")
-                Spacer()
-                Text("\(item.stock.XXL)")
+                HStack {
+                    Text("S:")
+                    Spacer()
+                    Text("\(item.stock.S)")
+                }
+                HStack {
+                    Text("M:")
+                    Spacer()
+                    Text("\(item.stock.M)")
+                }
+                HStack {
+                    Text("L:")
+                    Spacer()
+                    Text("\(item.stock.L)")
+                }
+                HStack {
+                    Text("XL:")
+                    Spacer()
+                    Text("\(item.stock.XL)")
+                }
+                HStack {
+                    Text("XXL:")
+                    Spacer()
+                    Text("\(item.stock.XXL)")
+                }
+            } else {
+                Text("Количество:")
+                    .font(.headline)
+                Text("\(item.totalStock)")
+                    .font(.title3)
             }
         }
     }

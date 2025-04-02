@@ -105,13 +105,18 @@ struct EditMerchView: View {
                     }
                 }
 
-                // Остатки по размерам
-                Section(header: Text("Остатки по размерам")) {
-                    Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
-                    Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
-                    Stepper("L: \(stock.L)", value: $stock.L, in: 0...999)
-                    Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
-                    Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
+                // Остатки по размерам или количеству
+                Section(header: Text(category == .clothing ? "Остатки по размерам" : "Количество товара")) {
+                    if category == .clothing {
+                        Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
+                        Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
+                        Stepper("L: \(stock.L)", value: $stock.L, in: 0...999)
+                        Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
+                        Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
+                    } else {
+                        Stepper("Количество: \(stock.total)", value: $stock.S, in: 0...999)
+                        // Удаляем ссылку на переменную catalogNumber, которая не существует
+                    }
                 }
             }
             .navigationTitle("Редактировать товар")
@@ -183,7 +188,16 @@ struct EditMerchView: View {
         updatedItem.price = priceValue
         updatedItem.category = category
         updatedItem.subcategory = subcategory
-        updatedItem.stock = stock
+
+        // Обновляем остатки в зависимости от категории
+        if category == .clothing {
+            // Для одежды сохраняем все размеры
+            updatedItem.stock = stock
+        } else {
+            // Для других категорий сохраняем общее количество в S, остальные размеры = 0
+            updatedItem.stock = MerchSizeStock(S: stock.S, M: 0, L: 0, XL: 0, XXL: 0)
+        }
+
         updatedItem.lowStockThreshold = thresholdValue
 
         // Если выбрано новое изображение, загружаем его
