@@ -188,7 +188,6 @@ final class MerchService: ObservableObject {
             itemId: itemId,
             size: size,
             quantity: quantity,
-            date: Date(),
             channel: channel,
             groupId: groupId
         )

@@ -6,6 +6,9 @@ struct MerchDetailView: View {
     @State private var showSell = false
     @State private var merchImage: UIImage?
     @State private var isLoadingImage = false
+    @State private var showEditSheet = false
+    @State private var showDeleteConfirmation = false
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         ScrollView {
@@ -25,12 +28,44 @@ struct MerchDetailView: View {
             .padding()
             .navigationTitle(item.name)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if AppState.shared.hasEditPermission(for: .merchandise) {
+                        Menu {
+                            Button {
+                                showEditSheet = true
+                            } label: {
+                                Label("Редактировать", systemImage: "pencil")
+                            }
+
+                            Button(role: .destructive) {
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Удалить", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                        }
+                    }
+                }
+            }
         }
         .onAppear {
             loadImage()
         }
         .sheet(isPresented: $showSell) {
             SellMerchView(item: item)
+        }
+        .sheet(isPresented: $showEditSheet) {
+            EditMerchView(item: item)
+        }
+        .alert("Удалить товар?", isPresented: $showDeleteConfirmation) {
+            Button("Отмена", role: .cancel) {}
+            Button("Удалить", role: .destructive) {
+                deleteItem()
+            }
+        } message: {
+            Text("Вы уверены, что хотите удалить товар '\(item.name)'? Это действие нельзя отменить.")
         }
     }
 
@@ -140,6 +175,15 @@ struct MerchDetailView: View {
             DispatchQueue.main.async {
                 self.merchImage = image
                 self.isLoadingImage = false
+            }
+        }
+    }
+
+    // Удаление товара
+    private func deleteItem() {
+        MerchService.shared.deleteItem(item) { success in
+            if success {
+                presentationMode.wrappedValue.dismiss()
             }
         }
     }
