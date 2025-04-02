@@ -318,17 +318,44 @@ struct MerchItemRow: View {
                     .font(.caption)
                     .foregroundColor(.gray)
 
-                // Индикатор запасов
-                HStack(spacing: 5) {
-                    Text("Запасы:")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                // Индикатор запасов - показываем в зависимости от категории
+                if item.category == .clothing {
+                    // Для одежды показываем размеры
+                    HStack(spacing: 5) {
+                        Text("Размеры:")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
 
-                    sizeIndicator("S", quantity: item.stock.S, lowThreshold: item.lowStockThreshold)
-                    sizeIndicator("M", quantity: item.stock.M, lowThreshold: item.lowStockThreshold)
-                    sizeIndicator("L", quantity: item.stock.L, lowThreshold: item.lowStockThreshold)
-                    sizeIndicator("XL", quantity: item.stock.XL, lowThreshold: item.lowStockThreshold)
-                    sizeIndicator("XXL", quantity: item.stock.XXL, lowThreshold: item.lowStockThreshold)
+                        sizeIndicator("S", quantity: item.stock.S, lowThreshold: item.lowStockThreshold)
+                        sizeIndicator("M", quantity: item.stock.M, lowThreshold: item.lowStockThreshold)
+                        sizeIndicator("L", quantity: item.stock.L, lowThreshold: item.lowStockThreshold)
+                        sizeIndicator("XL", quantity: item.stock.XL, lowThreshold: item.lowStockThreshold)
+                        sizeIndicator("XXL", quantity: item.stock.XXL, lowThreshold: item.lowStockThreshold)
+                    }
+                } else {
+                    // Для других категорий показываем общее количество
+                    HStack(spacing: 5) {
+                        Text("Количество:")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+
+                        // Используем sizeIndicator для отображения количества с тем же стилем
+                        Text("\(item.totalStock)")
+                            .font(.caption2)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(
+                                item.totalStock == 0 ? Color.gray.opacity(0.3) :
+                                    item.totalStock <= item.lowStockThreshold ? Color.orange.opacity(0.3) :
+                                        Color.green.opacity(0.3)
+                            )
+                            .foregroundColor(
+                                item.totalStock == 0 ? .gray :
+                                    item.totalStock <= item.lowStockThreshold ? .orange :
+                                        .green
+                            )
+                            .cornerRadius(3)
+                    }
                 }
             }
 

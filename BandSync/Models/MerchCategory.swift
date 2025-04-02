@@ -40,9 +40,17 @@ struct MerchSizeStock: Codable {
         return S + M + L + XL + XXL
     }
 
-    // Проверка на низкие остатки
+    // Проверка на низкие остатки - изменена логика согласно требованию
     func hasLowStock(threshold: Int) -> Bool {
-        return S <= threshold || M <= threshold || L <= threshold || XL <= threshold || XXL <= threshold
+        // Для товаров с общим количеством меньше 50, используем обычный порог
+        if total < 50 {
+            // Для одежды проверяем каждый размер
+            return S <= threshold || M <= threshold || L <= threshold || XL <= threshold || XXL <= threshold
+        } else {
+            // Для товаров с общим количеством больше или равным 50, считаем низкий запас,
+            // если общее количество не превышает 50
+            return false
+        }
     }
 }
 
@@ -68,6 +76,11 @@ struct MerchItem: Identifiable, Codable {
     }
 
     var hasLowStock: Bool {
+        // Если общее количество >= 50, всегда считаем запас достаточным
+        if totalStock >= 10 {
+            return false
+        }
+        // Иначе проверяем по обычной логике
         return stock.hasLowStock(threshold: lowStockThreshold)
     }
 }

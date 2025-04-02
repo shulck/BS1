@@ -518,4 +518,75 @@ final class MerchService: ObservableObject {
                 subcategoryText.lowercased().contains(searchText.lowercased())
         }
     }
+
+    func cancelSale(_ sale: MerchSale, item: MerchItem, completion: @escaping (Bool) -> Void) {
+        guard let saleId = sale.id else {
+            completion(false)
+            return
+        }
+
+        let batch = db.batch()
+
+        // Удаляем запись о продаже
+        let saleRef = db.collection("merch_sales").document(saleId)
+        batch.deleteDocument(saleRef)
+
+        // Возвращаем товар в запас
+        if let itemId = item.id {
+            let itemRef = db.collection("merchandise").document(itemId)
+
+            // Создаем обновление для возврата товаров в запас
+            var updatedStock = item.stock
+            switch sale.size {
+            case "S": updatedStock.S += sale.quantity
+            case "M": updatedStock.M += sale.quantity
+            case "L": updatedStock.L += sale.quantity
+            case "XL": updatedStock.XL += sale.quantity
+            case "XXL": updatedStock.XXL += sale.quantity
+            case "one_size": updatedStock.S += sale.quantity
+            default: break
+            }
+
+            batch.updateData([
+                "stock": try! Firestore.Encoder().encode(updatedStock),
+                "updatedAt": Timestamp(date: Date())
+            ], forDocument: itemRef)
+
+            // Опционально: удаляем финансовую запись, связанную с этой продажей
+            // Если это реализовано, нужно добавить ссылку на ID финансовой записи в структуре продажи
+
+            batch.commit { error in
+                if let error = error {
+                    print("Ошибка отмены продажи: \(error)")
+                    completion(false)
+                } else {
+                    // Обновляем локальные данные
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self = self else { return }
+
+                        // Удаляем продажу из локального списка
+                        self.sales.removeAll { $0.id == saleId }
+
+                        // Обновляем товар
+                        if let index = self.items.firstIndex(where: { $0.id == itemId }) {
+                            var updatedItem = self.items[index]
+                            updatedItem.stock = updatedStock
+                            self.items[index] = updatedItem
+                        }
+
+                        self.updateLowStockItems()
+
+                        completion(true)
+                    }
+                }
+            }
+        } else {
+            completion(false)
+        }
+    }
+
+    // Метод для получения всех продаж конкретного товара
+    func getSalesForItem(_ itemId: String) -> [MerchSale] {
+        return sales.filter { $0.itemId == itemId }
+    }
 }

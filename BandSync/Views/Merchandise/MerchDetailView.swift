@@ -8,6 +8,7 @@ struct MerchDetailView: View {
     @State private var isLoadingImage = false
     @State private var showEditSheet = false
     @State private var showDeleteConfirmation = false
+    @State private var showSalesHistory = false
     @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
@@ -21,6 +22,16 @@ struct MerchDetailView: View {
 
                 // Остатки по размерам
                 stockSection
+
+                // Добавляем кнопку истории продаж
+                Button("История продаж") {
+                    showSalesHistory = true
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue.opacity(0.2))
+                .foregroundColor(.blue)
+                .cornerRadius(10)
 
                 // Кнопка продажи
                 sellButton
@@ -58,6 +69,9 @@ struct MerchDetailView: View {
         }
         .sheet(isPresented: $showEditSheet) {
             EditMerchView(item: item)
+        }
+        .sheet(isPresented: $showSalesHistory) {
+            SalesHistoryView(item: item)
         }
         .alert("Удалить товар?", isPresented: $showDeleteConfirmation) {
             Button("Отмена", role: .cancel) {}
