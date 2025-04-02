@@ -9,7 +9,7 @@ struct NotificationPreferencesView: View {
     @State private var showPermissionAlert = false
     
     init() {
-        // Инициализируем настройки из менеджера уведомлений
+        // Используем _settings для правильной инициализации
         _settings = State(initialValue: NotificationManager.shared.getNotificationSettings())
     }
     

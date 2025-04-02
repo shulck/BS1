@@ -1,29 +1,22 @@
+//
+//  FinanceFilter.swift
+//  BandSync
+//
+//  Created by Oleksandr Kuziakin on 02.04.2025.
+//
+
 import Foundation
 import FirebaseFirestore
 
 extension FinanceFilter {
-    // Добавляем типы, которые, вероятно, отсутствуют
-    enum SortOrder {
-        case dateAscending
-        case dateDescending
-        case amountAscending
-        case amountDescending
-        case none
-    }
-    
     // Публичный метод для фильтрации финансовых записей
-    func applyFilter(completion: @escaping ([FinanceRecord]) -> Void) {
-        // Получаем доступ к базе данных
+    func applyFilter(in service: FinanceService, completion: @escaping ([FinanceRecord]) -> Void) {
+        // Получаем доступ к базе данных через сервис
         let db = Firestore.firestore()
         
         // Создаем базовый запрос к коллекции финансов
-        guard let groupId = AppState.shared.user?.groupId else {
-            completion([])
-            return
-        }
-        
         var query: Query = db.collection("finances")
-            .whereField("groupId", isEqualTo: groupId)
+            .whereField("groupId", isEqualTo: service.currentGroupId)
         
         // Применяем фильтры по типу
         if let type = type {
@@ -42,8 +35,8 @@ extension FinanceFilter {
         }
         
         // Выполняем запрос
-        query.getDocuments { (snapshot, error) in
-            // Обработка ошибок с явной типизацией
+        query.getDocuments { (snapshot: QuerySnapshot?, error: Error?) in
+            // Обработка ошибок
             if let error = error {
                 print("Ошибка фильтрации: \(error.localizedDescription)")
                 completion([])
@@ -66,7 +59,7 @@ extension FinanceFilter {
             }
             
             // Применяем дополнительную сортировку
-            let sortedRecords = self.sortRecords(filteredRecords)
+            let sortedRecords = sortRecords(filteredRecords)
             
             // Возвращаем результат
             completion(sortedRecords)
