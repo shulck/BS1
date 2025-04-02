@@ -1,432 +1,150 @@
-//
-//  FinanceChartView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 02.04.2025.
-//
-
-
-//
-//  FinanceChartView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
 import SwiftUI
 import Charts
 
 struct FinanceChartView: View {
-    @StateObject private var financeService = FinanceService.shared
-    @State private var selectedPeriod: ChartPeriod = .month
-    @State private var selectedChartType: ChartType = .bar
+    let income: [Double]
+    let expenses: [Double]
+    let labels: [String]
+    let totalIncome: Double
+    let totalExpenses: Double
+    let period: ChartPeriod
     
-    // Определение периодов для графика
-    enum ChartPeriod: String, CaseIterable, Identifiable {
-        case week = "Неделя"
-        case month = "Месяц"
-        case quarter = "Квартал"
-        case year = "Год"
-        case all = "Все время"
+    enum ChartPeriod {
+        case week
+        case month
+        case quarter
+        case year
         
-        var id: String { rawValue }
-        
-        var days: Int {
+        var title: String {
             switch self {
-            case .week: return 7
-            case .month: return 30
-            case .quarter: return 90
-            case .year: return 365
-            case .all: return 3650 // Примерно 10 лет
+            case .week: return "Неделя"
+            case .month: return "Месяц"
+            case .quarter: return "Квартал"
+            case .year: return "Год"
             }
         }
     }
     
-    // Типы графиков
-    enum ChartType: String, CaseIterable, Identifiable {
-        case bar = "Столбчатый"
-        case line = "Линейный"
-        case pie = "Круговой"
-        
-        var id: String { rawValue }
-        
-        var icon: String {
-            switch self {
-            case .bar: return "chart.bar"
-            case .line: return "waveform.path"
-            case .pie: return "chart.pie"
-            }
-        }
-    }
-    
-    // Данные для графиков
-    struct ChartData: Identifiable {
-        var id = UUID()
-        var date: Date
-        var income: Double
-        var expense: Double
-        var category: String?
-        
-        var profit: Double {
-            income - expense
-        }
-    }
-    
-    // Данные для круговой диаграммы
-    struct PieChartData: Identifiable {
-        var id = UUID()
-        var category: String
-        var amount: Double
-        var isIncome: Bool
+    var profit: Double {
+        totalIncome - totalExpenses
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Селектор периода и типа графика
+        VStack(alignment: .leading, spacing: 16) {
+            // Заголовок и сводная информация
             HStack {
-                Picker("Период", selection: $selectedPeriod) {
-                    ForEach(ChartPeriod.allCases) { period in
-                        Text(period.rawValue).tag(period)
-                    }
+                VStack(alignment: .leading) {
+                    Text("Финансовый обзор")
+                        .font(.headline)
+                    Text(period.title)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                
                 Spacer()
-                
-                // Переключатель типа графика
-                Picker("Тип", selection: $selectedChartType) {
-                    ForEach(ChartType.allCases) { type in
-                        Image(systemName: type.icon).tag(type)
-                    }
+                VStack(alignment: .trailing) {
+                    Text("Прибыль")
+                        .font(.subheadline)
+                    Text("\(Int(profit)) \(profit >= 0 ? "+" : "")")
+                        .font(.headline)
+                        .foregroundColor(profit >= 0 ? .green : .red)
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .frame(width: 120)
             }
-            .padding(.horizontal)
-            .padding(.top, 8)
             
-            // Разделитель для размера
             Divider()
-                .padding(.vertical, 8)
-            
-            // Финансовая сводка
-            financialSummaryView
-                .padding(.horizontal)
-                .padding(.bottom, 8)
             
             // График
-            if financeService.records.isEmpty {
-                emptyStateView
-            } else {
-                chartView
-            }
-        }
-        .navigationTitle("Финансовая аналитика")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            if let groupId = AppState.shared.user?.groupId {
-                financeService.fetch(for: groupId)
-            }
-        }
-    }
-    
-    // MARK: - Представления компонентов
-    
-    // Финансовая сводка
-    private var financialSummaryView: some View {
-        HStack(spacing: 20) {
-            // Доходы
-            VStack(alignment: .leading) {
-                Text("Доходы")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Text("\(Int(incomeForSelectedPeriod()))")
-                    .font(.headline)
-                    .foregroundColor(.green)
-            }
-            
-            // Расходы
-            VStack(alignment: .leading) {
-                Text("Расходы")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Text("\(Int(expenseForSelectedPeriod()))")
-                    .font(.headline)
-                    .foregroundColor(.red)
-            }
-            
-            // Прибыль
-            VStack(alignment: .leading) {
-                Text("Прибыль")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Text("\(Int(incomeForSelectedPeriod() - expenseForSelectedPeriod()))")
-                    .font(.headline)
-                    .foregroundColor(incomeForSelectedPeriod() >= expenseForSelectedPeriod() ? .green : .red)
-            }
-        }
-    }
-    
-    // Состояние пустого графика
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 64))
-                .foregroundColor(.gray)
-            
-            Text("Нет данных для отображения")
-                .font(.headline)
-                .foregroundColor(.gray)
-            
-            Text("Добавьте финансовые операции для визуализации")
-                .font(.caption)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    // График в зависимости от выбранного типа
-    @ViewBuilder
-    private var chartView: some View {
-        if #available(iOS 16.0, *) {
-            switch selectedChartType {
-            case .bar:
-                barChartView
-            case .line:
-                lineChartView
-            case .pie:
-                pieChartView
-            }
-        } else {
-            // Для iOS ниже 16.0
-            Text("Графики доступны в iOS 16 и выше")
-                .foregroundColor(.gray)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-    
-    // MARK: - Графики
-    
-    @available(iOS 16.0, *)
-    private var barChartView: some View {
-        let chartData = getChartData()
-        
-        return Chart(chartData) { item in
-            BarMark(
-                x: .value("Дата", item.date),
-                y: .value("Сумма", item.income),
-                width: .fixed(20)
-            )
-            .foregroundStyle(.green)
-            
-            BarMark(
-                x: .value("Дата", item.date),
-                y: .value("Сумма", item.expense),
-                width: .fixed(20)
-            )
-            .foregroundStyle(.red)
-        }
-        .chartForegroundStyleScale([
-            "Доходы": .green,
-            "Расходы": .red
-        ])
-        .chartLegend(position: .top)
-        .padding()
-        .frame(height: 300)
-    }
-    
-    @available(iOS 16.0, *)
-    private var lineChartView: some View {
-        let chartData = getChartData()
-        
-        return Chart {
-            ForEach(chartData) { item in
-                LineMark(
-                    x: .value("Дата", item.date),
-                    y: .value("Доходы", item.income)
-                )
-                .foregroundStyle(.green)
-                .interpolationMethod(.catmullRom)
-                
-                PointMark(
-                    x: .value("Дата", item.date),
-                    y: .value("Доходы", item.income)
-                )
-                .foregroundStyle(.green)
-                
-                LineMark(
-                    x: .value("Дата", item.date),
-                    y: .value("Расходы", item.expense)
-                )
-                .foregroundStyle(.red)
-                .interpolationMethod(.catmullRom)
-                
-                PointMark(
-                    x: .value("Дата", item.date),
-                    y: .value("Расходы", item.expense)
-                )
-                .foregroundStyle(.red)
-                
-                // Линия прибыли
-                LineMark(
-                    x: .value("Дата", item.date),
-                    y: .value("Прибыль", item.profit)
-                )
-                .foregroundStyle(.blue)
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-                .interpolationMethod(.catmullRom)
-            }
-        }
-        .chartForegroundStyleScale([
-            "Доходы": .green,
-            "Расходы": .red,
-            "Прибыль": .blue
-        ])
-        .chartLegend(position: .top)
-        .padding()
-        .frame(height: 300)
-    }
-    
-    @available(iOS 16.0, *)
-    private var pieChartView: some View {
-        let pieData = getPieChartData()
-        
-        return VStack {
-            // Переключатель доходов/расходов для круговой диаграммы
-            Picker("Показать", selection: $pieChartType) {
-                Text("Доходы").tag(PieChartType.income)
-                Text("Расходы").tag(PieChartType.expense)
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-            
-            Chart(pieData.filter { $0.isIncome == (pieChartType == .income) }) { item in
-                SectorMark(
-                    angle: .value("Сумма", item.amount),
-                    innerRadius: .ratio(0.5),
-                    angularInset: 1.5
-                )
-                .cornerRadius(5)
-                .foregroundStyle(by: .value("Категория", item.category))
-            }
-            .chartLegend(position: .bottom)
-            .padding()
-            .frame(height: 250)
-        }
-    }
-    
-    // MARK: - Функции данных
-    
-    // Получение отфильтрованных записей для выбранного периода
-    private func filteredRecords() -> [FinanceRecord] {
-        let cutoffDate = Calendar.current.date(byAdding: .day, value: -selectedPeriod.days, to: Date()) ?? Date()
-        return financeService.records.filter { $0.date >= cutoffDate }
-    }
-    
-    // Расчет суммы доходов за выбранный период
-    private func incomeForSelectedPeriod() -> Double {
-        let records = filteredRecords()
-        return records.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-    }
-    
-    // Расчет суммы расходов за выбранный период
-    private func expenseForSelectedPeriod() -> Double {
-        let records = filteredRecords()
-        return records.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-    }
-    
-    // Получение данных для графика
-    private func getChartData() -> [ChartData] {
-        let records = filteredRecords()
-        let calendar = Calendar.current
-        
-        var result: [ChartData] = []
-        
-        // Определяем интервал группировки в зависимости от выбранного периода
-        let groupingInterval: Calendar.Component
-        
-        switch selectedPeriod {
-        case .week:
-            groupingInterval = .day
-        case .month:
-            groupingInterval = .day
-        case .quarter:
-            groupingInterval = .weekOfYear
-        case .year, .all:
-            groupingInterval = .month
-        }
-        
-        // Группируем записи по выбранному интервалу
-        var recordsByInterval: [Date: [FinanceRecord]] = [:]
-        
-        for record in records {
-            var components: DateComponents
-            
-            switch groupingInterval {
-            case .day:
-                components = calendar.dateComponents([.year, .month, .day], from: record.date)
-            case .weekOfYear:
-                components = calendar.dateComponents([.year, .weekOfYear], from: record.date)
-            case .month:
-                components = calendar.dateComponents([.year, .month], from: record.date)
-            default:
-                components = calendar.dateComponents([.year, .month], from: record.date)
-            }
-            
-            if let date = calendar.date(from: components) {
-                if recordsByInterval[date] == nil {
-                    recordsByInterval[date] = []
+            Chart {
+                ForEach(0..<income.count, id: \.self) { index in
+                    BarMark(
+                        x: .value("Период", labels[index]),
+                        y: .value("Доход", income[index]),
+                        width: .fixed(20)
+                    )
+                    .foregroundStyle(.green)
+                    .position(by: .value("Тип", "Доходы"))
+                    
+                    BarMark(
+                        x: .value("Период", labels[index]),
+                        y: .value("Расход", expenses[index]),
+                        width: .fixed(20)
+                    )
+                    .foregroundStyle(.red)
+                    .position(by: .value("Тип", "Расходы"))
                 }
-                recordsByInterval[date]?.append(record)
+                
+                RuleMark(y: .value("Прибыль", 0))
+                    .foregroundStyle(.gray)
+            }
+            .frame(height: 200)
+            .chartXAxis {
+                AxisMarks(preset: .aligned) { value in
+                    if let label = value.as(String.self) {
+                        AxisValueLabel(label)
+                    }
+                }
+            }
+            .chartForegroundStyleScale([
+                "Доходы": Color.green,
+                "Расходы": Color.red
+            ])
+            .chartLegend(position: .bottom, alignment: .center)
+            
+            Divider()
+            
+            // Итоговая статистика
+            HStack(spacing: 20) {
+                Spacer()
+                
+                VStack {
+                    Text("Доходы")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(Int(totalIncome))")
+                        .font(.title3)
+                        .foregroundColor(.green)
+                }
+                
+                VStack {
+                    Text("Расходы")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(Int(totalExpenses))")
+                        .font(.title3)
+                        .foregroundColor(.red)
+                }
+                
+                VStack {
+                    Text("Баланс")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(Int(profit))")
+                        .font(.title3)
+                        .foregroundColor(profit >= 0 ? .green : .red)
+                }
+                
+                Spacer()
             }
         }
-        
-        // Создаем точки данных из сгруппированных записей
-        for (date, intervalRecords) in recordsByInterval.sorted(by: { $0.key < $1.key }) {
-            let income = intervalRecords.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-            let expense = intervalRecords.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-            
-            result.append(ChartData(date: date, income: income, expense: expense))
-        }
-        
-        return result
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(radius: 2)
     }
-    
-    // Тип данных для переключения круговой диаграммы
-    enum PieChartType {
-        case income, expense
-    }
-    @State private var pieChartType: PieChartType = .income
-    
-    // Получение данных для круговой диаграммы
-    private func getPieChartData() -> [PieChartData] {
-        let records = filteredRecords()
-        var result: [PieChartData] = []
-        
-        // Группировка записей по категориям и типу (доход/расход)
-        var amountByCategory: [String: [FinanceType: Double]] = [:]
-        
-        for record in records {
-            if amountByCategory[record.category] == nil {
-                amountByCategory[record.category] = [.income: 0, .expense: 0]
-            }
-            
-            amountByCategory[record.category]?[record.type, default: 0] += record.amount
-        }
-        
-        // Преобразование в массив для графика
-        for (category, amounts) in amountByCategory {
-            if let incomeAmount = amounts[.income], incomeAmount > 0 {
-                result.append(PieChartData(category: category, amount: incomeAmount, isIncome: true))
-            }
-            
-            if let expenseAmount = amounts[.expense], expenseAmount > 0 {
-                result.append(PieChartData(category: category, amount: expenseAmount, isIncome: false))
-            }
-        }
-        
-        return result
+}
+
+// Предварительный просмотр для разработки
+struct FinanceChartView_Previews: PreviewProvider {
+    static var previews: some View {
+        FinanceChartView(
+            income: [1500, 2300, 1800, 2700, 3200, 2100],
+            expenses: [1200, 1800, 1400, 2100, 1900, 1600],
+            labels: ["Янв", "Фев", "Март", "Апр", "Май", "Июнь"],
+            totalIncome: 13600,
+            totalExpenses: 10000,
+            period: .month
+        )
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .previewLayout(.sizeThatFits)
     }
 }
