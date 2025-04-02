@@ -13,6 +13,9 @@ struct AddMerchView: View {
     @State private var selectedImage: PhotosPickerItem?
     @State private var merchImage: UIImage?
     @State private var isUploading = false
+    @State private var category: MerchCategory = .clothing
+    @State private var subcategory: MerchSubcategory = .tshirt
+
 
     var body: some View {
         NavigationView {
