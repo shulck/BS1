@@ -1,7 +1,7 @@
 import SwiftUI
-import UserNotifications
 
-struct NotificationPreferencesView: View {
+// Обновленный интерфейс настроек уведомлений
+struct NotificationSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var isLoading = false
     @State private var notificationsEnabled = false
@@ -9,7 +9,7 @@ struct NotificationPreferencesView: View {
     @State private var showPermissionAlert = false
     
     init() {
-        // Используем _settings для правильной инициализации
+        // Инициализируем настройки из менеджера уведомлений
         _settings = State(initialValue: NotificationManager.shared.getNotificationSettings())
     }
     
@@ -49,6 +49,19 @@ struct NotificationPreferencesView: View {
                             }
                         ))
                         
+                        Toggle("Вечером накануне (20:00)", isOn: Binding(
+                            get: { settings.eventReminderIntervals.contains(12) },
+                            set: { newValue in
+                                if newValue {
+                                    if !settings.eventReminderIntervals.contains(12) {
+                                        settings.eventReminderIntervals.append(12)
+                                    }
+                                } else {
+                                    settings.eventReminderIntervals.removeAll { $0 == 12 }
+                                }
+                            }
+                        ))
+                        
                         Toggle("За час до события", isOn: Binding(
                             get: { settings.eventReminderIntervals.contains(1) },
                             set: { newValue in
@@ -61,6 +74,10 @@ struct NotificationPreferencesView: View {
                                 }
                             }
                         ))
+                        
+                        // Доп. уведомления для личных событий
+                        Toggle("Доп. уведомления для личных событий", isOn: $settings.personalEventExtraNotifications)
+                            .padding(.top, 4)
                     }
                     
                     Section(header: Text("Напоминания о задачах")) {
@@ -113,15 +130,17 @@ struct NotificationPreferencesView: View {
                         .shadow(radius: 3)
                 }
             })
-            .alert("Разрешения", isPresented: $showPermissionAlert) {
-                Button("Отмена", role: .cancel) {
-                    notificationsEnabled = false
-                }
-                Button("Настройки") {
-                    openSettings()
-                }
-            } message: {
-                Text("Чтобы получать уведомления, необходимо дать разрешение в настройках устройства.")
+            .alert(isPresented: $showPermissionAlert) {
+                Alert(
+                    title: Text("Разрешения"),
+                    message: Text("Чтобы получать уведомления, необходимо дать разрешение в настройках устройства."),
+                    primaryButton: .default(Text("Настройки"), action: {
+                        openSettings()
+                    }),
+                    secondaryButton: .cancel(Text("Отмена"), action: {
+                        notificationsEnabled = false
+                    })
+                )
             }
         }
     }
@@ -130,8 +149,10 @@ struct NotificationPreferencesView: View {
     private func checkNotificationStatus() {
         isLoading = true
         NotificationManager.shared.checkAuthorizationStatus { status in
-            notificationsEnabled = status == .authorized
-            isLoading = false
+            DispatchQueue.main.async {
+                notificationsEnabled = status == .authorized
+                isLoading = false
+            }
         }
     }
     
