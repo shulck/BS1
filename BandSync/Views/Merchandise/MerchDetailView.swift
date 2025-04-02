@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MerchDetailView: View {
     let item: MerchItem
@@ -11,13 +12,13 @@ struct MerchDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Изображение товара
                 imageSection
-                
+
                 // Основная информация
                 detailsSection
-                
+
                 // Остатки по размерам
                 stockSection
-                
+
                 // Кнопка продажи
                 sellButton
             }
@@ -32,7 +33,7 @@ struct MerchDetailView: View {
             SellMerchView(item: item)
         }
     }
-    
+
     // Секция с изображением
     private var imageSection: some View {
         Group {
@@ -54,19 +55,19 @@ struct MerchDetailView: View {
             }
         }
     }
-    
+
     // Секция с основными деталями
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(item.description)
                 .font(.body)
-            
+
             HStack {
                 Text("Категория:")
                 Spacer()
                 Text(item.category.rawValue)
             }
-            
+
             if let subcategory = item.subcategory {
                 HStack {
                     Text("Подкатегория:")
@@ -74,7 +75,7 @@ struct MerchDetailView: View {
                     Text(subcategory.rawValue)
                 }
             }
-            
+
             HStack {
                 Text("Цена:")
                 Spacer()
@@ -83,13 +84,13 @@ struct MerchDetailView: View {
             }
         }
     }
-    
+
     // Секция с остатками
     private var stockSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Остатки по размерам")
                 .font(.headline)
-            
+
             HStack {
                 Text("S:")
                 Spacer()
@@ -117,7 +118,7 @@ struct MerchDetailView: View {
             }
         }
     }
-    
+
     // Кнопка продажи
     private var sellButton: some View {
         Button("Продать товар") {
@@ -129,11 +130,11 @@ struct MerchDetailView: View {
         .foregroundColor(.white)
         .cornerRadius(10)
     }
-    
+
     // Загрузка изображения
     private func loadImage() {
         guard let imageURLString = item.imageURL else { return }
-        
+
         isLoadingImage = true
         MerchImageManager.shared.downloadImage(from: imageURLString) { image in
             DispatchQueue.main.async {

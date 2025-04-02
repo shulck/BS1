@@ -17,20 +17,33 @@ import Foundation
 import FirebaseFirestore
 
 enum MerchSaleChannel: String, Codable, CaseIterable, Identifiable {
-    var id: String { rawValue }
-
     case concert = "Концерт"
     case online = "Онлайн"
-    case partner = "Партнёр"
+    case store = "Магазин"
+    case other = "Другое"
+
+    var id: String { rawValue }
 }
 
 struct MerchSale: Identifiable, Codable {
     @DocumentID var id: String?
+    let itemId: String
+    let size: String
+    let quantity: Int
+    let date: Date
+    let channel: MerchSaleChannel
+    let groupId: String
 
-    var itemId: String
-    var quantity: Int
-    var size: String
-    var channel: MerchSaleChannel
-    var date: Date
-    var groupId: String
+    enum CodingKeys: String, CodingKey {
+        case id, itemId, size, quantity, date, channel, groupId
+    }
+
+    init(itemId: String, size: String, quantity: Int, date: Date = Date(), channel: MerchSaleChannel, groupId: String) {
+        self.itemId = itemId
+        self.size = size
+        self.quantity = quantity
+        self.date = date
+        self.channel = channel
+        self.groupId = groupId
+    }
 }

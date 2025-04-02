@@ -13,8 +13,6 @@ struct AddMerchView: View {
     @State private var selectedImage: PhotosPickerItem?
     @State private var merchImage: UIImage?
     @State private var isUploading = false
-    @State private var category: MerchCategory = .clothing
-    @State private var subcategory: MerchSubcategory = .tshirt
 
 
     var body: some View {
@@ -122,52 +120,45 @@ struct AddMerchView: View {
 
         isUploading = true
 
+        // Создаем базовый объект товара
+        let baseItem = MerchItem(
+            name: name,
+            description: description,
+            price: priceValue,
+            category: category,
+            subcategory: subcategory,
+            stock: stock,
+            groupId: groupId
+        )
+
         // Если есть изображение, загружаем его
         if let merchImage = merchImage {
-            MerchImageManager.shared.uploadImage(merchImage, for: MerchItem(name: name, description: description, price: priceValue, category: category, subcategory: subcategory, stock: stock, groupId: groupId)) { result in
+            MerchImageManager.shared.uploadImage(merchImage, for: baseItem) { result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let url):
                         // Создаем товар с URL изображения
-                        let item = MerchItem(
-                            name: name,
-                            description: description,
-                            price: priceValue,
-                            category: category,
-                            subcategory: subcategory,
-                            stock: stock,
-                            groupId: groupId,
-                            imageURL: url.absoluteString
-                        )
-                        
+                        var item = baseItem
+                        item.imageURL = url.absoluteString
+
                         MerchService.shared.addItem(item) { success in
-                            isUploading = false
+                            self.isUploading = false
                             if success {
-                                dismiss()
+                                self.dismiss()
                             }
                         }
                     case .failure(let error):
                         print("Ошибка загрузки изображения: \(error)")
-                        isUploading = false
+                        self.isUploading = false
                     }
                 }
             }
         } else {
             // Создаем товар без изображения
-            let item = MerchItem(
-                name: name,
-                description: description,
-                price: priceValue,
-                category: category,
-                subcategory: subcategory,
-                stock: stock,
-                groupId: groupId
-            )
-            
-            MerchService.shared.addItem(item) { success in
-                isUploading = false
+            MerchService.shared.addItem(baseItem) { success in
+                self.isUploading = false
                 if success {
-                    dismiss()
+                    self.dismiss()
                 }
             }
         }

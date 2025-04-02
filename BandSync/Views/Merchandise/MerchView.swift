@@ -15,29 +15,29 @@ struct MerchView: View {
     @State private var selectedCategory: MerchCategory? = nil
     @State private var searchText = ""
     @State private var showLowStockAlert = false
-    
+
     // Фильтрованные товары с учетом поиска и категорий
     private var filteredItems: [MerchItem] {
         var items = merchService.items
-        
+
         // Фильтрация по категории
         if let category = selectedCategory {
             items = items.filter { $0.category == category }
         }
-        
+
         // Фильтрация по поисковому запросу
         if !searchText.isEmpty {
             items = items.filter { item in
                 item.name.lowercased().contains(searchText.lowercased()) ||
                 item.description.lowercased().contains(searchText.lowercased()) ||
                 item.category.rawValue.lowercased().contains(searchText.lowercased()) ||
-                item.subcategory.rawValue.lowercased().contains(searchText.lowercased())
+                (item.subcategory?.rawValue.lowercased() ?? "").contains(searchText.lowercased())
             }
         }
-        
+
         return items
     }
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -45,7 +45,7 @@ struct MerchView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         categoryButton(title: "Все", icon: "tshirt.fill", category: nil)
-                        
+
                         ForEach(MerchCategory.allCases) { category in
                             categoryButton(
                                 title: category.rawValue,
@@ -58,7 +58,7 @@ struct MerchView: View {
                     .padding(.vertical, 8)
                 }
                 .background(Color.gray.opacity(0.1))
-                
+
                 // Счетчик товаров и низкого запаса
                 HStack {
                     VStack(alignment: .leading) {
@@ -68,9 +68,9 @@ struct MerchView: View {
                         Text("\(filteredItems.count)")
                             .font(.headline)
                     }
-                    
+
                     Spacer()
-                    
+
                     if !merchService.lowStockItems.isEmpty {
                         // Информация о товарах с низким запасом
                         Button {
@@ -85,7 +85,7 @@ struct MerchView: View {
                                         .font(.headline)
                                         .foregroundColor(.orange)
                                 }
-                                
+
                                 Image(systemName: "exclamationmark.triangle")
                                     .foregroundColor(.orange)
                             }
@@ -109,7 +109,7 @@ struct MerchView: View {
                                     .font(.headline)
                                     .foregroundColor(.green)
                             }
-                            
+
                             Image(systemName: "checkmark.circle")
                                 .foregroundColor(.green)
                         }
@@ -121,7 +121,7 @@ struct MerchView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                
+
                 if merchService.isLoading {
                     // Индикатор загрузки
                     ProgressView()
@@ -132,12 +132,12 @@ struct MerchView: View {
                         Image(systemName: "bag")
                             .font(.system(size: 64))
                             .foregroundColor(.gray)
-                        
+
                         Text(searchText.isEmpty
                             ? "Нет товаров в выбранной категории"
                             : "Нет товаров по запросу '\(searchText)'")
                         .foregroundColor(.gray)
-                        
+
                         if AppState.shared.hasEditPermission(for: .merchandise) {
                             Button("Добавить товар") {
                                 showAdd = true
@@ -174,13 +174,13 @@ struct MerchView: View {
                                 Label("Добавить товар", systemImage: "plus")
                             }
                         }
-                        
+
                         Button {
                             showAnalytics = true
                         } label: {
                             Label("Аналитика продаж", systemImage: "chart.bar")
                         }
-                        
+
                         if !merchService.lowStockItems.isEmpty {
                             Button {
                                 showLowStockItems()
@@ -212,7 +212,7 @@ struct MerchView: View {
             }
         }
     }
-    
+
     // Кнопка категории
     private func categoryButton(title: String, icon: String, category: MerchCategory?) -> some View {
         Button {
@@ -223,7 +223,7 @@ struct MerchView: View {
             VStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
-                
+
                 Text(title)
                     .font(.caption)
             }
@@ -234,12 +234,12 @@ struct MerchView: View {
             .cornerRadius(10)
         }
     }
-    
+
     // Показать список товаров с низким запасом
     private func showLowStockItems() {
         // Создаем временный список для сравнения
         let lowStockItemIds = Set(merchService.lowStockItems.compactMap { $0.id })
-        
+
         // Определяем товары с низким запасом из текущего списка
         let lowStockItemsInCurrentView = filteredItems.filter { item in
             if let id = item.id {
@@ -247,7 +247,7 @@ struct MerchView: View {
             }
             return false
         }
-        
+
         // Если нет товаров с низким запасом в текущем представлении,
         // покажем отдельный алерт с информацией
         if lowStockItemsInCurrentView.isEmpty {
@@ -256,7 +256,7 @@ struct MerchView: View {
             // Иначе сбрасываем фильтры и задаем новый поиск для отображения только товаров с низким запасом
             selectedCategory = nil
             searchText = "low_stock_filter"
-            
+
             // Задержка для применения фильтров
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.searchText = ""  // Сбрасываем поисковый запрос
@@ -269,7 +269,7 @@ struct MerchView: View {
 
 struct MerchItemRow: View {
     let item: MerchItem
-    
+
     var body: some View {
         HStack {
             // Изображение товара или иконка категории
@@ -300,30 +300,30 @@ struct MerchItemRow: View {
                     .background(Color.gray.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            
+
             // Информация о товаре
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(item.name)
                         .font(.headline)
-                    
+
                     if item.hasLowStock {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.orange)
                             .font(.caption)
                     }
                 }
-                
-                Text("\(item.category.rawValue) • \(item.subcategory.rawValue)")
+
+                Text("\(item.category.rawValue) \(item.subcategory != nil ? "• \(item.subcategory!.rawValue)" : "")")
                     .font(.caption)
                     .foregroundColor(.gray)
-                
+
                 // Индикатор запасов
                 HStack(spacing: 5) {
                     Text("Запасы:")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    
+
                     sizeIndicator("S", quantity: item.stock.S, lowThreshold: item.lowStockThreshold)
                     sizeIndicator("M", quantity: item.stock.M, lowThreshold: item.lowStockThreshold)
                     sizeIndicator("L", quantity: item.stock.L, lowThreshold: item.lowStockThreshold)
@@ -331,15 +331,15 @@ struct MerchItemRow: View {
                     sizeIndicator("XXL", quantity: item.stock.XXL, lowThreshold: item.lowStockThreshold)
                 }
             }
-            
+
             Spacer()
-            
+
             // Цена
             VStack(alignment: .trailing) {
                 Text("\(Int(item.price)) EUR")
                     .font(.headline)
                     .bold()
-                
+
                 Text("Всего: \(item.totalStock)")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -347,7 +347,7 @@ struct MerchItemRow: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     // Индикатор наличия размера
     private func sizeIndicator(_ size: String, quantity: Int, lowThreshold: Int) -> some View {
         Text(size)
