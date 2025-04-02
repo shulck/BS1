@@ -68,7 +68,7 @@ struct LocationPickerView: View {
                 .listStyle(PlainListStyle())
             } else {
                 // Карта для выбора места
-                MapView(
+                EventMapView(
                     region: $region,
                     annotations: mapAnnotations(),
                     onLocationSelected: { coordinate in

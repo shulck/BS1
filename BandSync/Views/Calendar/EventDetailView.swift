@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 
 struct EventDetailView: View {
     @StateObject private var setlistService = SetlistService.shared
@@ -165,9 +166,51 @@ struct EventDetailView: View {
             if isEditing {
                 editingLocationView
             } else {
-                EventMapView(event: event)
+                EventMapView(
+                    region: .constant(MKCoordinateRegion(
+                        center: selectedLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+                    )),
+                    annotations: mapAnnotations(),
+                    onLocationSelected: nil,
+                    allowSelection: false
+                )
             }
         }
+    }
+    
+    // Генерация аннотаций для карты
+    private func mapAnnotations() -> [MapAnnotation] {
+        // Если есть геокодированное местоположение, создаем аннотацию
+        if let location = selectedLocation {
+            return [
+                MapAnnotation(
+                    title: location.name,
+                    subtitle: location.address,
+                    coordinate: location.coordinate,
+                    type: .event,
+                    date: event.date,
+                    eventId: event.id
+                )
+            ]
+        }
+        
+        // Если есть текст локации, но нет геокодированных координат
+        if let locationText = event.location, !locationText.isEmpty {
+            return [
+                MapAnnotation(
+                    title: "Место события",
+                    subtitle: locationText,
+                    coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                    type: .event,
+                    date: event.date,
+                    eventId: event.id
+                )
+            ]
+        }
+        
+        // Нет информации о локации
+        return []
     }
     
     // Редактирование локации
