@@ -1,4 +1,5 @@
 import SwiftUI
+import VisionKit
 
 struct AddTransactionView: View {
     @Environment(\.dismiss) var dismiss

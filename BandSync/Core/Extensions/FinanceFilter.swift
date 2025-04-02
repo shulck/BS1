@@ -1,17 +1,14 @@
 import Foundation
 import FirebaseFirestore
 
+enum SortOrder {
+    case dateAscending
+    case dateDescending
+    case amountAscending
+    case amountDescending
+}
+
 extension FinanceFilter {
-    // Добавляем типы, которые, вероятно, отсутствуют
-    enum SortOrder {
-        case dateAscending
-        case dateDescending
-        case amountAscending
-        case amountDescending
-        case none
-    }
-    
-    // Публичный метод для фильтрации финансовых записей
     func applyFilter(completion: @escaping ([FinanceRecord]) -> Void) {
         // Получаем доступ к базе данных
         let db = Firestore.firestore()
@@ -25,69 +22,63 @@ extension FinanceFilter {
         var query: Query = db.collection("finances")
             .whereField("groupId", isEqualTo: groupId)
         
-        // Применяем фильтры по типу
-        if let type = type {
+        // Применяем фильтр по типу
+        if let type = selectedTypes.first {
             query = query.whereField("type", isEqualTo: type.rawValue)
         }
         
-        // Применяем фильтры по категории
-        if let category = category {
-            query = query.whereField("category", isEqualTo: category)
-        }
-        
-        // Применяем фильтры по диапазону дат
-        if let startDate = startDate, let endDate = endDate {
-            query = query.whereField("date", isGreaterThanOrEqualTo: startDate)
-                         .whereField("date", isLessThanOrEqualTo: endDate)
-        }
-        
         // Выполняем запрос
-        query.getDocuments { (snapshot, error) in
-            // Обработка ошибок с явной типизацией
-            if let error = error {
-                print("Ошибка фильтрации: \(error.localizedDescription)")
-                completion([])
-                return
-            }
-            
-            // Преобразование документов в модели
+        query.getDocuments { snapshot, error in
             guard let documents = snapshot?.documents else {
                 completion([])
                 return
             }
             
-            let filteredRecords = documents.compactMap { doc -> FinanceRecord? in
-                do {
-                    return try doc.data(as: FinanceRecord.self)
-                } catch {
-                    print("Ошибка декодирования: \(error)")
-                    return nil
+            // Преобразуем документы в модели
+            let records = documents.compactMap { try? $0.data(as: FinanceRecord.self) }
+            
+            // Локальная постфильтрация
+            let filteredRecords = records.filter { record in
+                // Фильтр по категориям
+                guard selectedCategories.isEmpty || selectedCategories.contains(record.category) else {
+                    return false
                 }
+                
+                // Фильтр по диапазону дат
+                if let startDate = startDate, record.date < startDate {
+                    return false
+                }
+                
+                if let endDate = endDate, record.date > endDate {
+                    return false
+                }
+                
+                // Фильтр по сумме
+                if let minAmount = minAmount, record.amount < minAmount {
+                    return false
+                }
+                
+                if let maxAmount = maxAmount, record.amount > maxAmount {
+                    return false
+                }
+                
+                return true
             }
             
-            // Применяем дополнительную сортировку
-            let sortedRecords = self.sortRecords(filteredRecords)
-            
-            // Возвращаем результат
-            completion(sortedRecords)
-        }
-    }
-    
-    // Приватный метод сортировки
-    private func sortRecords(_ records: [FinanceRecord]) -> [FinanceRecord] {
-        return records.sorted {
+            // Сортировка
+            let sortedRecords: [FinanceRecord]
             switch sortOrder {
             case .dateAscending:
-                return $0.date < $1.date
+                sortedRecords = filteredRecords.sorted { $0.date < $1.date }
             case .dateDescending:
-                return $0.date > $1.date
+                sortedRecords = filteredRecords.sorted { $0.date > $1.date }
             case .amountAscending:
-                return $0.amount < $1.amount
+                sortedRecords = filteredRecords.sorted { $0.amount < $1.amount }
             case .amountDescending:
-                return $0.amount > $1.amount
-            case .none:
-                return false
+                sortedRecords = filteredRecords.sorted { $0.amount > $1.amount }
             }
+            
+            completion(sortedRecords)
         }
     }
 }

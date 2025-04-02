@@ -1,86 +1,82 @@
-//
-//  FinanceFilter.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 02.04.2025.
-//
-
 import Foundation
-import FirebaseFirestore
 
-extension FinanceFilter {
-    // Публичный метод для фильтрации финансовых записей
-    func applyFilter(in service: FinanceService, completion: @escaping ([FinanceRecord]) -> Void) {
-        // Получаем доступ к базе данных через сервис
-        let db = Firestore.firestore()
-        
-        // Создаем базовый запрос к коллекции финансов
-        var query: Query = db.collection("finances")
-            .whereField("groupId", isEqualTo: service.currentGroupId)
-        
-        // Применяем фильтры по типу
-        if let type = type {
-            query = query.whereField("type", isEqualTo: type.rawValue)
-        }
-        
-        // Применяем фильтры по категории
-        if let category = category {
-            query = query.whereField("category", isEqualTo: category)
-        }
-        
-        // Применяем фильтры по диапазону дат
-        if let startDate = startDate, let endDate = endDate {
-            query = query.whereField("date", isGreaterThanOrEqualTo: startDate)
-                         .whereField("date", isLessThanOrEqualTo: endDate)
-        }
-        
-        // Выполняем запрос
-        query.getDocuments { (snapshot: QuerySnapshot?, error: Error?) in
-            // Обработка ошибок
-            if let error = error {
-                print("Ошибка фильтрации: \(error.localizedDescription)")
-                completion([])
-                return
-            }
-            
-            // Преобразование документов в модели
-            guard let documents = snapshot?.documents else {
-                completion([])
-                return
-            }
-            
-            let filteredRecords = documents.compactMap { doc -> FinanceRecord? in
-                do {
-                    return try doc.data(as: FinanceRecord.self)
-                } catch {
-                    print("Ошибка декодирования: \(error)")
-                    return nil
-                }
-            }
-            
-            // Применяем дополнительную сортировку
-            let sortedRecords = sortRecords(filteredRecords)
-            
-            // Возвращаем результат
-            completion(sortedRecords)
-        }
+struct FinanceFilter {
+    var startDate: Date?
+    var endDate: Date?
+    var minAmount: Double?
+    var maxAmount: Double?
+    var selectedTypes: [FinanceType] = []
+    var selectedCategories: [String] = []
+    
+    enum SortOrder {
+        case dateAscending
+        case dateDescending
+        case amountAscending
+        case amountDescending
     }
     
-    // Приватный метод сортировки
-    private func sortRecords(_ records: [FinanceRecord]) -> [FinanceRecord] {
-        return records.sorted {
-            switch sortOrder {
-            case .dateAscending:
-                return $0.date < $1.date
-            case .dateDescending:
-                return $0.date > $1.date
-            case .amountAscending:
-                return $0.amount < $1.amount
-            case .amountDescending:
-                return $0.amount > $1.amount
-            case .none:
+    var sortOrder: SortOrder = .dateDescending
+    
+    var isActive: Bool {
+        return startDate != nil ||
+               endDate != nil ||
+               minAmount != nil ||
+               maxAmount != nil ||
+               !selectedTypes.isEmpty ||
+               !selectedCategories.isEmpty
+    }
+    
+    mutating func reset() {
+        startDate = nil
+        endDate = nil
+        minAmount = nil
+        maxAmount = nil
+        selectedTypes = []
+        selectedCategories = []
+        sortOrder = .dateDescending
+    }
+    
+    func apply(to records: [FinanceRecord]) -> [FinanceRecord] {
+        let filteredRecords = records.filter { record in
+            // Фильтр по типу
+            guard selectedTypes.isEmpty || selectedTypes.contains(record.type) else { return false }
+            
+            // Фильтр по категории
+            guard selectedCategories.isEmpty || selectedCategories.contains(record.category) else { return false }
+            
+            // Фильтр по дате начала
+            if let startDate = startDate, record.date < startDate {
                 return false
             }
+            
+            // Фильтр по дате окончания
+            if let endDate = endDate, record.date > endDate {
+                return false
+            }
+            
+            // Фильтр по минимальной сумме
+            if let minAmount = minAmount, record.amount < minAmount {
+                return false
+            }
+            
+            // Фильтр по максимальной сумме
+            if let maxAmount = maxAmount, record.amount > maxAmount {
+                return false
+            }
+            
+            return true
+        }
+        
+        // Сортировка
+        switch sortOrder {
+        case .dateAscending:
+            return filteredRecords.sorted { $0.date < $1.date }
+        case .dateDescending:
+            return filteredRecords.sorted { $0.date > $1.date }
+        case .amountAscending:
+            return filteredRecords.sorted { $0.amount < $1.amount }
+        case .amountDescending:
+            return filteredRecords.sorted { $0.amount > $1.amount }
         }
     }
 }
