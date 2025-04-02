@@ -213,7 +213,8 @@ struct AddTransactionView: View {
             return
         }
 
-        guard FinanceValidator.isValid(record: recordToSave) else {
+        // Заменяем FinanceValidator.isValid на базовую проверку
+        guard recordToSave.amount > 0 && !recordToSave.currency.isEmpty else {
             isLoadingTransaction = false
             return
         }
@@ -245,7 +246,9 @@ struct AddTransactionView: View {
         case .other: return "ellipsis.circle.fill"
         case .performance: return "music.note"
         case .merch: return "tshirt.fill"
-        default: return "questionmark.circle"
+        case .accommodation: return "house.fill"
+        case .royalties: return "music.quarternote.3"
+        case .sponsorship: return "dollarsign.circle"
         }
     }
 
@@ -259,7 +262,9 @@ struct AddTransactionView: View {
         case .other: return .secondary
         case .performance: return .red
         case .merch: return .indigo
-        default: return .primary
+        case .accommodation: return .teal
+        case .royalties: return .purple
+        case .sponsorship: return .green
         }
     }
 }

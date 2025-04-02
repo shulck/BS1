@@ -5,21 +5,13 @@
 //  Created by Oleksandr Kuziakin on 31.03.2025.
 //
 
-
-//
-//  FinanceService.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
 import Foundation
 import FirebaseFirestore
 
 
 final class FinanceService: ObservableObject {
     static let shared = FinanceService()
-    
+
     @Published var records: [FinanceRecord] = []
 
     private let db = Firestore.firestore()
@@ -58,8 +50,8 @@ final class FinanceService: ObservableObject {
     }
 
     func delete(_ record: FinanceRecord) {
-        guard let id = record.id else { return }
-        db.collection("finances").document(id).delete { error in
+        guard !record.id.isEmpty else { return }
+        db.collection("finances").document(record.id).delete { error in
             if let error = error {
                 print("Ошибка удаления: \(error.localizedDescription)")
             } else if let groupId = AppState.shared.user?.groupId {

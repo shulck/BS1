@@ -11,6 +11,7 @@ struct TransactionDetailView: View {
     let record: FinanceRecord
     @State private var showShareSheet = false
     @State private var exportedPDF: Data?
+    @State private var showAnimatedDetails = false
 
     private func categoryIcon(for category: String) -> String {
         switch category {
@@ -30,115 +31,172 @@ struct TransactionDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Заголовок и сумма
+                // Заголовок и сумма с анимацией
                 VStack(spacing: 8) {
                     Text("\(record.type == .income ? "+" : "-")\(String(format: "%.2f", record.amount)) \(record.currency)")
-                        .font(.system(size: 36, weight: .bold))
+                        .font(.system(size: 38, weight: .bold))
                         .foregroundColor(record.type == .income ? .green : .red)
+                        .padding(.top, 10)
+                        .padding(.bottom, 2)
 
                     Text(formattedDate(record.date))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.secondary.opacity(0.1))
-                .cornerRadius(12)
+                .padding(.vertical, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    record.type == .income ? Color.green.opacity(0.2) : Color.red.opacity(0.2),
+                                    Color.secondary.opacity(0.05)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                )
+                .overlay(
+                    // Круговой индикатор категории
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 60, height: 60)
+                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
 
-                // Детали транзакции
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Image(systemName: record.type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                            .foregroundColor(record.type == .income ? .green : .red)
-                            .font(.title2)
-                        Text("Тип")
-                            .font(.headline)
-                        Spacer()
-                        Text(record.type == .income ? "Доход" : "Расход")
-                            .foregroundColor(.secondary)
+                        ZStack {
+                            Circle()
+                                .fill(record.type == .income ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
+                                .frame(width: 50, height: 50)
+
+                            Image(systemName: categoryIcon(for: record.category))
+                                .font(.system(size: 24))
+                                .foregroundColor(record.type == .income ? .green : .red)
+                        }
                     }
+                    .offset(y: 55),
+                    alignment: .bottom
+                )
+                .padding(.bottom, 30)
+
+                // Детали транзакции с анимацией
+                VStack(alignment: .leading, spacing: 20) {
+                    // Тип транзакции
+                    detailRow(
+                        icon: record.type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
+                        iconColor: record.type == .income ? .green : .red,
+                        title: "Тип",
+                        value: record.type == .income ? "Доход" : "Расход"
+                    )
+                    .opacity(showAnimatedDetails ? 1 : 0)
+                    .offset(x: showAnimatedDetails ? 0 : -20)
+                    .animation(.easeOut.delay(0.1), value: showAnimatedDetails)
 
                     Divider()
 
-                    HStack {
-                        Image(systemName: categoryIcon(for: record.category))
-                            .foregroundColor(.blue)
-                            .font(.title2)
-                        Text("Категория")
-                            .font(.headline)
-                        Spacer()
-                        Text(record.category)
-                            .foregroundColor(.secondary)
-                    }
+                    // Категория
+                    detailRow(
+                        icon: categoryIcon(for: record.category),
+                        iconColor: .blue,
+                        title: "Категория",
+                        value: record.category
+                    )
+                    .opacity(showAnimatedDetails ? 1 : 0)
+                    .offset(x: showAnimatedDetails ? 0 : -20)
+                    .animation(.easeOut.delay(0.2), value: showAnimatedDetails)
 
                     if !record.details.isEmpty {
                         Divider()
 
-                        VStack(alignment: .leading, spacing: 8) {
+                        // Описание
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Image(systemName: "doc.text")
                                     .foregroundColor(.blue)
                                     .font(.title2)
+                                    .frame(width: 28, height: 28)
+
                                 Text("Описание")
                                     .font(.headline)
                             }
 
                             Text(record.details)
                                 .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 8)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.secondary.opacity(0.1))
+                                )
                                 .padding(.leading, 34)
                         }
+                        .opacity(showAnimatedDetails ? 1 : 0)
+                        .offset(x: showAnimatedDetails ? 0 : -20)
+                        .animation(.easeOut.delay(0.3), value: showAnimatedDetails)
                     }
 
                     if record.isCached == true {
                         Divider()
 
-                        HStack {
-                            Image(systemName: "cloud.slash")
-                                .foregroundColor(.orange)
-                                .font(.title2)
-                            Text("Статус")
-                                .font(.headline)
-                            Spacer()
-                            Text("Ожидает синхронизации")
-                                .foregroundColor(.orange)
-                        }
+                        detailRow(
+                            icon: "cloud.slash",
+                            iconColor: .orange,
+                            title: "Статус",
+                            value: "Ожидает синхронизации",
+                            valueColor: .orange
+                        )
+                        .opacity(showAnimatedDetails ? 1 : 0)
+                        .offset(x: showAnimatedDetails ? 0 : -20)
+                        .animation(.easeOut.delay(0.4), value: showAnimatedDetails)
                     }
                 }
-                .padding()
-                .background(Color.secondary.opacity(0.1))
-                .cornerRadius(12)
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.secondary.opacity(0.05))
+                )
+                .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 5)
 
                 // Кнопки действий
                 HStack(spacing: 16) {
-                    Button {
-                        createPDF()
-                    } label: {
-                        VStack {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.title2)
-                            Text("Поделиться")
-                                .font(.caption)
+                    actionButton(
+                        icon: "square.and.arrow.up",
+                        title: "Поделиться",
+                        action: {
+                            createPDF()
                         }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
+                    )
+                    .opacity(showAnimatedDetails ? 1 : 0)
+                    .scaleEffect(showAnimatedDetails ? 1 : 0.8)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(0.5), value: showAnimatedDetails)
 
-                    Button {
-                        // В будущем здесь можно добавить функциональность редактирования
-                    } label: {
-                        VStack {
-                            Image(systemName: "pencil")
-                                .font(.title2)
-                            Text("Изменить")
-                                .font(.caption)
+                    actionButton(
+                        icon: "trash",
+                        title: "Удалить",
+                        color: .red,
+                        action: {
+                            // В будущем здесь можно добавить диалог подтверждения удаления
                         }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(true)
+                    )
+                    .opacity(showAnimatedDetails ? 1 : 0)
+                    .scaleEffect(showAnimatedDetails ? 1 : 0.8)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(0.6), value: showAnimatedDetails)
+
+                    actionButton(
+                        icon: "arrow.triangle.2.circlepath",
+                        title: "Повторить",
+                        action: {
+                            // В будущем здесь можно добавить функционал повторения транзакции
+                        }
+                    )
+                    .opacity(showAnimatedDetails ? 1 : 0)
+                    .scaleEffect(showAnimatedDetails ? 1 : 0.8)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(0.7), value: showAnimatedDetails)
                 }
-                .padding()
+                .padding(.top, 10)
             }
             .padding()
         }
@@ -148,6 +206,60 @@ struct TransactionDetailView: View {
                 DocumentShareSheet(items: [pdf])
             }
         }
+        .onAppear {
+            // Запускаем анимацию с небольшой задержкой
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                showAnimatedDetails = true
+            }
+        }
+    }
+
+    // Модульный компонент для отображения строки деталей
+    private func detailRow(icon: String, iconColor: Color, title: String, value: String, valueColor: Color = .secondary) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(iconColor)
+                .font(.title2)
+                .frame(width: 28, height: 28)
+
+            Text(title)
+                .font(.headline)
+
+            Spacer()
+
+            Text(value)
+                .foregroundColor(valueColor)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(valueColor.opacity(0.1))
+                )
+        }
+    }
+
+    // Модульный компонент для кнопки действия
+    private func actionButton(icon: String, title: String, color: Color = .blue, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    .background(Color.secondary.opacity(0.05))
+                    .cornerRadius(12)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 
     private func formattedDate(_ date: Date) -> String {

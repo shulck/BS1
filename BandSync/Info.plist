@@ -2,29 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleLocalizations</key>
-    <array/>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-    </array>
-    <key>NSFaceIDUsageDescription</key>
-    <string>We use Face ID to provide a secure and convenient way to log in to your account.</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>The app uses your location to display concert venues and events on a map.</string>
-    <key>NSLocationUsageDescription</key>
-    <string>The app uses geolocation to display events and contacts on a map.</string>
-
-    <!-- Разрешения для работы с камерой и фото -->
-    <key>NSCameraUsageDescription</key>
-    <string>Доступ к камере требуется для сканирования и анализа чеков.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>Доступ к галерее требуется для загрузки и анализа фотографий чеков.</string>
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Доступ на добавление фото в галерею требуется для сохранения отсканированных чеков.</string>
-    
-    <!-- Разрешение для доступа к контактам -->
-    <key>NSContactsUsageDescription</key>
-    <string>Доступ к контактам требуется для импорта существующих контактов в приложение.</string>
+	<key>CFBundleLocalizations</key>
+	<array/>
+	<key>UIBackgroundModes</key>
+	<array/>
 </dict>
 </plist>

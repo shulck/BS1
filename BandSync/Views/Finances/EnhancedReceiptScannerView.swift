@@ -14,7 +14,7 @@ import NaturalLanguage
 struct EnhancedReceiptScannerView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var financeService = FinanceService.shared
-    
+
     // Состояния для распознанных данных
     @State private var recognizedText = ""
     @State private var extractedAmount: Double?
@@ -22,7 +22,7 @@ struct EnhancedReceiptScannerView: View {
     @State private var extractedMerchant: String?
     @State private var extractedCategory: String?
     @State private var extractedItems: [String] = []
-    
+
     // Состояния для редактирования
     @State private var type: FinanceType = .expense
     @State private var amount: String = ""
@@ -30,7 +30,7 @@ struct EnhancedReceiptScannerView: View {
     @State private var category: String = ""
     @State private var details: String = ""
     @State private var date = Date()
-    
+
     // Состояния интерфейса
     @State private var isScanning = false
     @State private var isProcessing = false
@@ -38,7 +38,7 @@ struct EnhancedReceiptScannerView: View {
     @State private var showCamera = false
     @State private var showGallery = false
     @State private var errorMessage: String?
-    
+
     // Форматтер для даты
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -46,7 +46,7 @@ struct EnhancedReceiptScannerView: View {
         formatter.timeStyle = .none
         return formatter
     }()
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -55,14 +55,14 @@ struct EnhancedReceiptScannerView: View {
                     if !isEditing {
                         scanButtons
                     }
-                    
+
                     // Результат сканирования или форма редактирования
                     if isEditing {
                         editForm
                     } else if !recognizedText.isEmpty {
                         scanResultView
                     }
-                    
+
                     // Сообщение об ошибке
                     if let error = errorMessage {
                         Text(error)
@@ -87,7 +87,7 @@ struct EnhancedReceiptScannerView: View {
                         }
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
@@ -123,9 +123,9 @@ struct EnhancedReceiptScannerView: View {
             })
         }
     }
-    
+
     // MARK: - UI Components
-    
+
     // Кнопки сканирования
     private var scanButtons: some View {
         VStack(spacing: 15) {
@@ -142,7 +142,7 @@ struct EnhancedReceiptScannerView: View {
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }
-            
+
             Button(action: {
                 showGallery = true
             }) {
@@ -158,7 +158,7 @@ struct EnhancedReceiptScannerView: View {
             }
         }
     }
-    
+
     // Отображение результатов сканирования
     private var scanResultView: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -166,7 +166,7 @@ struct EnhancedReceiptScannerView: View {
             Text("Scan Results")
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .center)
-            
+
             // Границы для результатов
             VStack(alignment: .leading, spacing: 10) {
                 // Распознанная сумма
@@ -181,7 +181,7 @@ struct EnhancedReceiptScannerView: View {
                             .foregroundColor(.orange)
                     }
                 }
-                
+
                 // Распознанная дата
                 HStack {
                     Text("Date:")
@@ -194,7 +194,7 @@ struct EnhancedReceiptScannerView: View {
                             .foregroundColor(.orange)
                     }
                 }
-                
+
                 // Продавец
                 HStack {
                     Text("Merchant:")
@@ -208,7 +208,7 @@ struct EnhancedReceiptScannerView: View {
                             .foregroundColor(.orange)
                     }
                 }
-                
+
                 // Предполагаемая категория
                 HStack {
                     Text("Category:")
@@ -221,7 +221,7 @@ struct EnhancedReceiptScannerView: View {
                             .foregroundColor(.orange)
                     }
                 }
-                
+
                 // Распознанные товары
                 if !extractedItems.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
@@ -239,7 +239,7 @@ struct EnhancedReceiptScannerView: View {
                         }
                     }
                 }
-                
+
                 // Распознанный текст
                 VStack(alignment: .leading) {
                     Text("Recognized text:")
@@ -258,7 +258,7 @@ struct EnhancedReceiptScannerView: View {
             .padding()
             .background(Color.gray.opacity(0.1))
             .cornerRadius(10)
-            
+
             // Кнопка для добавления транзакции
             Button(action: {
                 prepareForEditing()
@@ -276,7 +276,7 @@ struct EnhancedReceiptScannerView: View {
             .padding(.top)
         }
     }
-    
+
     // Форма редактирования
     private var editForm: some View {
         VStack(spacing: 15) {
@@ -287,17 +287,17 @@ struct EnhancedReceiptScannerView: View {
             }
             .pickerStyle(.segmented)
             .padding(.vertical, 5)
-            
+
             // Поле суммы
             HStack {
                 Text("Amount:")
                     .bold()
                     .frame(width: 80, alignment: .leading)
-                
+
                 TextField("0.00", text: $amount)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                
+
                 TextField("EUR", text: $currency)
                     .frame(width: 60)
                     .multilineTextAlignment(.center)
@@ -305,30 +305,30 @@ struct EnhancedReceiptScannerView: View {
             .padding(10)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
-            
+
             // Поле даты
             HStack {
                 Text("Date:")
                     .bold()
                     .frame(width: 80, alignment: .leading)
-                
+
                 DatePicker("", selection: $date, displayedComponents: .date)
                     .labelsHidden()
             }
             .padding(10)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
-            
+
             // Поле категории
             HStack {
                 Text("Category:")
                     .bold()
                     .frame(width: 80, alignment: .leading)
-                
+
                 // Получаем доступные категории из FinanceCatgory
                 Picker("", selection: $category) {
-                    ForEach(FinanceCategory.forType(type), id: \.self) { category in
-                        Text(category.rawValue).tag(category.rawValue)
+                    ForEach(FinanceCategory.forType(type), id: \.self) { financeCategory in
+                        Text(financeCategory.rawValue).tag(financeCategory.rawValue)
                     }
                 }
                 .pickerStyle(.menu)
@@ -336,19 +336,19 @@ struct EnhancedReceiptScannerView: View {
             .padding(10)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
-            
+
             // Поле деталей
             VStack(alignment: .leading) {
                 Text("Details:")
                     .bold()
-                
+
                 TextEditor(text: $details)
                     .frame(height: 100)
                     .padding(5)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
             }
-            
+
             // Кнопка сохранения
             Button(action: {
                 saveRecord()
@@ -364,18 +364,18 @@ struct EnhancedReceiptScannerView: View {
             .padding(.top)
         }
     }
-    
+
     // MARK: - Методы
-    
+
     // Обработка распознанного текста
     private func processRecognizedText() {
         isProcessing = true
-        
+
         // Используем отдельный поток для анализа
         DispatchQueue.global(qos: .userInitiated).async {
             // Анализируем текст с помощью ReceiptAnalyzer
             let receiptData = ReceiptAnalyzer.analyze(text: recognizedText)
-            
+
             // Обновляем UI в главном потоке
             DispatchQueue.main.async {
                 extractedAmount = receiptData.amount
@@ -383,26 +383,26 @@ struct EnhancedReceiptScannerView: View {
                 extractedMerchant = receiptData.merchantName
                 extractedCategory = receiptData.category
                 extractedItems = receiptData.items
-                
+
                 // Предварительно заполняем поля редактирования
                 if let amount = extractedAmount {
                     self.amount = String(format: "%.2f", amount)
                 }
-                
+
                 if let date = extractedDate {
                     self.date = date
                 }
-                
+
                 if let category = extractedCategory {
                     self.category = category
                 }
-                
+
                 // Формируем детали из продавца и товаров
                 var detailsText = ""
                 if let merchant = extractedMerchant {
                     detailsText += merchant
                 }
-                
+
                 if !extractedItems.isEmpty {
                     if !detailsText.isEmpty {
                         detailsText += "\n"
@@ -412,19 +412,19 @@ struct EnhancedReceiptScannerView: View {
                         detailsText += "\n..."
                     }
                 }
-                
+
                 self.details = detailsText
-                
+
                 isProcessing = false
             }
         }
     }
-    
+
     // Подготовка к редактированию
     private func prepareForEditing() {
         isEditing = true
     }
-    
+
     // Сохранение записи
     private func saveRecord() {
         guard let amountValue = Double(amount),
@@ -433,7 +433,7 @@ struct EnhancedReceiptScannerView: View {
             errorMessage = "Invalid amount or group ID"
             return
         }
-        
+
         let record = FinanceRecord(
             type: type,
             amount: amountValue,
@@ -444,16 +444,17 @@ struct EnhancedReceiptScannerView: View {
             receiptUrl: nil,
             groupId: groupId
         )
-        
-        guard FinanceValidator.isValid(record: record) else {
+
+        // Заменяем FinanceValidator.isValid на базовую проверку
+        guard record.amount > 0 && !record.currency.isEmpty && !record.category.isEmpty else {
             errorMessage = "Invalid record data"
             return
         }
-        
+
         isProcessing = true
         FinanceService.shared.add(record) { success in
             isProcessing = false
-            
+
             if success {
                 dismiss()
             } else {
@@ -468,70 +469,70 @@ struct EnhancedReceiptScannerView: View {
 // Представление для сканера документов VisionKit
 struct VNDocumentCameraScannerView: UIViewControllerRepresentable {
     @Binding var recognizedText: String
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     func makeUIViewController(context: Context) -> VNDocumentCameraViewController {
         let scanner = VNDocumentCameraViewController()
         scanner.delegate = context.coordinator
         return scanner
     }
-    
+
     func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
-    
+
     class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
         let parent: VNDocumentCameraScannerView
-        
+
         init(_ parent: VNDocumentCameraScannerView) {
             self.parent = parent
         }
-        
+
         func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
             // Берем только первую страницу для чека
             guard scan.pageCount > 0 else {
                 controller.dismiss(animated: true)
                 return
             }
-            
+
             let image = scan.imageOfPage(at: 0)
             recognizeText(from: image)
             controller.dismiss(animated: true)
         }
-        
+
         func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
             controller.dismiss(animated: true)
         }
-        
+
         func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
             print("Document scanner error: \(error)")
             controller.dismiss(animated: true)
         }
-        
+
         private func recognizeText(from image: UIImage) {
             guard let cgImage = image.cgImage else { return }
-            
+
             let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             let request = VNRecognizeTextRequest { [weak self] request, error in
                 guard let observations = request.results as? [VNRecognizedTextObservation],
                       error == nil else {
                     return
                 }
-                
+
                 let text = observations.compactMap { observation in
                     observation.topCandidates(1).first?.string
                 }.joined(separator: "\n")
-                
+
                 DispatchQueue.main.async {
                     self?.parent.recognizedText = text
                 }
             }
-            
+
             // Настройка запроса для лучшего распознавания
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-            
+
             try? requestHandler.perform([request])
         }
     }
@@ -541,62 +542,62 @@ struct VNDocumentCameraScannerView: UIViewControllerRepresentable {
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var recognizedText: String
     @Environment(\.presentationMode) var presentationMode
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
         picker.sourceType = .photoLibrary
         return picker
     }
-    
+
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
+
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let parent: ImagePicker
-        
+
         init(_ parent: ImagePicker) {
             self.parent = parent
         }
-        
+
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let image = info[.originalImage] as? UIImage {
                 recognizeText(from: image)
             }
-            
+
             parent.presentationMode.wrappedValue.dismiss()
         }
-        
+
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.presentationMode.wrappedValue.dismiss()
         }
-        
+
         private func recognizeText(from image: UIImage) {
             guard let cgImage = image.cgImage else { return }
-            
+
             let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             let request = VNRecognizeTextRequest { [weak self] request, error in
                 guard let observations = request.results as? [VNRecognizedTextObservation],
                       error == nil else {
                     return
                 }
-                
+
                 let text = observations.compactMap { observation in
                     observation.topCandidates(1).first?.string
                 }.joined(separator: "\n")
-                
+
                 DispatchQueue.main.async {
                     self?.parent.recognizedText = text
                 }
             }
-            
+
             // Настройка запроса для лучшего распознавания
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-            
+
             try? requestHandler.perform([request])
         }
     }
