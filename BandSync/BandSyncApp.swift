@@ -17,7 +17,7 @@ struct BandSyncApp: App {
         // Не вызывайте print() в инициализаторе структуры App
         // Это приводит к ошибкам компиляции
     }
-
+    
     var body: some Scene {
         WindowGroup {
             SplashView()
