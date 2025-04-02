@@ -14,6 +14,7 @@ struct SellMerchView: View {
     @State private var size = "M"
     @State private var quantity = 1
     @State private var channel: MerchSaleChannel = .concert
+    @State private var isGift = false
 
     var body: some View {
         NavigationView {
@@ -31,18 +32,31 @@ struct SellMerchView: View {
 
                 Stepper("Количество: \(quantity)", value: $quantity, in: 1...999)
 
-                Picker("Канал продаж", selection: $channel) {
-                    ForEach(MerchSaleChannel.allCases) {
-                        Text($0.rawValue).tag($0)
+                Toggle("Это подарок", isOn: $isGift)
+                    .onChange(of: isGift) { newValue in
+                        if newValue {
+                            channel = .gift
+                        } else if channel == .gift {
+                            channel = .concert
+                        }
+                    }
+
+                if !isGift {
+                    Picker("Канал продаж", selection: $channel) {
+                        ForEach(MerchSaleChannel.allCases.filter { $0 != .gift }) {
+                            Text($0.rawValue).tag($0)
+                        }
                     }
                 }
             }
 
-            .navigationTitle("Продажа")
+            .navigationTitle(isGift ? "Подарить товар" : "Продажа")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Подтвердить") {
-                        MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: channel)
+                    Button(isGift ? "Подарить" : "Подтвердить") {
+                        // При подарке принудительно устанавливаем канал gift
+                        let finalChannel = isGift ? MerchSaleChannel.gift : channel
+                        MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: finalChannel)
                         dismiss()
                     }
                 }

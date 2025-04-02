@@ -91,6 +91,6 @@ struct SalesHistoryView: View {
     }
 
     private func saleAmount(_ sale: MerchSale) -> Double {
-        return Double(sale.quantity) * item.price
+        return sale.channel == .gift ? 0 : Double(sale.quantity) * item.price
     }
 }

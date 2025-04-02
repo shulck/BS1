@@ -10,6 +10,7 @@ struct EditSaleView: View {
     @State private var channel: MerchSaleChannel
     @State private var isUpdating = false
     @State private var showDeleteConfirmation = false
+    @State private var isGift: Bool
 
     init(sale: MerchSale, item: MerchItem) {
         self.sale = sale
@@ -17,6 +18,7 @@ struct EditSaleView: View {
         _size = State(initialValue: sale.size)
         _quantity = State(initialValue: sale.quantity)
         _channel = State(initialValue: sale.channel)
+        _isGift = State(initialValue: sale.channel == .gift)
     }
 
     var body: some View {
@@ -72,17 +74,34 @@ struct EditSaleView: View {
 
                     Stepper("Количество: \(quantity)", value: $quantity, in: 1...999)
 
-                    Picker("Канал продаж", selection: $channel) {
-                        ForEach(MerchSaleChannel.allCases) {
-                            Text($0.rawValue).tag($0)
+                    Toggle("Это подарок", isOn: $isGift)
+                        .onChange(of: isGift) { newValue in
+                            if newValue {
+                                channel = .gift
+                            } else if channel == .gift {
+                                channel = .concert
+                            }
+                        }
+
+                    if !isGift {
+                        Picker("Канал продаж", selection: $channel) {
+                            ForEach(MerchSaleChannel.allCases.filter { $0 != .gift }) {
+                                Text($0.rawValue).tag($0)
+                            }
                         }
                     }
 
                     HStack {
                         Text("Итого")
                         Spacer()
-                        Text("\(totalAmount, specifier: "%.2f") EUR")
-                            .bold()
+                        if isGift {
+                            Text("Подарок")
+                                .bold()
+                                .foregroundColor(.green)
+                        } else {
+                            Text("\(totalAmount, specifier: "%.2f") EUR")
+                                .bold()
+                        }
                     }
                 }
 
@@ -158,7 +177,9 @@ struct EditSaleView: View {
         MerchService.shared.cancelSale(sale, item: item) { success in
             if success {
                 // Затем создадим новую с обновленными данными
-                MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: channel)
+                // Если это подарок, принудительно устанавливаем канал gift
+                let finalChannel = isGift ? MerchSaleChannel.gift : channel
+                MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: finalChannel)
                 isUpdating = false
                 dismiss()
             } else {
