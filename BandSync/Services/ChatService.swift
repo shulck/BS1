@@ -60,7 +60,7 @@ final class ChatService: ObservableObject {
                 "lastMessageTime": message.timestamp
             ])
         } catch {
-            print("Ошибка отправки сообщения: \(error)")
+            print("Error sending message: \(error)")
         }
     }
 

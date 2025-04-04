@@ -26,22 +26,22 @@ struct AddTaskView: View {
     var body: some View {
         NavigationView {
             Form {
-                TextField("Название задачи", text: $title)
-                TextField("Описание", text: $description)
-                TextField("Назначено (userID)", text: $assignedTo)
-                DatePicker("Срок", selection: $dueDate, displayedComponents: .date)
+                TextField("Task name", text: $title)
+                TextField("Description", text: $description)
+                TextField("Assigned to (userID)", text: $assignedTo)
+                DatePicker("Deadline", selection: $dueDate, displayedComponents: .date)
             }
-            .navigationTitle("Новая задача")
+            .navigationTitle("New Task")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         save()
                     }
                     .disabled(title.isEmpty || assignedTo.isEmpty)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }

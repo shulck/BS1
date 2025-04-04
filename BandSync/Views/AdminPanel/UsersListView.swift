@@ -22,9 +22,9 @@ struct UsersListView: View {
                     Spacer()
                 }
             } else {
-                // Участники группы
+                // Group members
                 if !groupService.groupMembers.isEmpty {
-                    Section(header: Text("Участники")) {
+                    Section(header: Text("Members")) {
                         ForEach(groupService.groupMembers) { user in
                             HStack {
                                 VStack(alignment: .leading) {
@@ -33,22 +33,22 @@ struct UsersListView: View {
                                     Text(user.email)
                                         .font(.caption)
                                         .foregroundColor(.gray)
-                                    Text("Роль: \(user.role.rawValue)")
+                                    Text("Role: \(user.role.rawValue)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                                 
                                 Spacer()
                                 
-                                // Кнопки действий
+                                // Action buttons
                                 if user.id != AppState.shared.user?.id {
                                     Menu {
-                                        Button("Изменить роль") {
+                                        Button("Change role") {
                                             selectedUserId = user.id
                                             showingRoleView = true
                                         }
                                         
-                                        Button("Удалить из группы", role: .destructive) {
+                                        Button("Remove from group", role: .destructive) {
                                             groupService.removeUser(userId: user.id)
                                         }
                                     } label: {
@@ -60,9 +60,9 @@ struct UsersListView: View {
                     }
                 }
                 
-                // Ожидающие подтверждения
+                // Pending approvals
                 if !groupService.pendingMembers.isEmpty {
-                    Section(header: Text("Ожидают одобрения")) {
+                    Section(header: Text("Awaiting approval")) {
                         ForEach(groupService.pendingMembers) { user in
                             HStack {
                                 VStack(alignment: .leading) {
@@ -75,18 +75,18 @@ struct UsersListView: View {
                                 
                                 Spacer()
                                 
-                                // Кнопки принятия/отклонения
+                                // Accept/reject buttons
                                 Button {
                                     groupService.approveUser(userId: user.id)
                                 } label: {
-                                    Text("Принять")
+                                    Text("Accept")
                                         .foregroundColor(.green)
                                 }
                                 
                                 Button {
                                     groupService.rejectUser(userId: user.id)
                                 } label: {
-                                    Text("Отклонить")
+                                    Text("Decline")
                                         .foregroundColor(.red)
                                 }
                             }
@@ -94,9 +94,9 @@ struct UsersListView: View {
                     }
                 }
                 
-                // Код приглашения
+                // Invitation code
                 if let group = groupService.group {
-                    Section(header: Text("Код приглашения")) {
+                    Section(header: Text("Invitation code")) {
                         HStack {
                             Text(group.code)
                                 .font(.system(.title3, design: .monospaced))
@@ -111,7 +111,7 @@ struct UsersListView: View {
                             }
                         }
                         
-                        Button("Сгенерировать новый код") {
+                        Button("Generate new code") {
                             groupService.regenerateCode()
                         }
                     }
@@ -125,7 +125,7 @@ struct UsersListView: View {
                 }
             }
         }
-        .navigationTitle("Участники группы")
+        .navigationTitle("Group members")
         .onAppear {
             if let gid = AppState.shared.user?.groupId {
                 groupService.fetchGroup(by: gid)
@@ -142,7 +142,7 @@ struct UsersListView: View {
     }
 }
 
-// Представление для выбора роли
+// Role selection view
 struct RoleSelectionView: View {
     let userId: String
     @StateObject private var groupService = GroupService.shared
@@ -152,7 +152,7 @@ struct RoleSelectionView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Выберите роль")) {
+                Section(header: Text("Select a role")) {
                     ForEach(UserModel.UserRole.allCases, id: \.self) { role in
                         Button {
                             selectedRole = role
@@ -189,17 +189,17 @@ struct RoleSelectionView: View {
                     }
                 }
             }
-            .navigationTitle("Изменение роли")
+            .navigationTitle("Change role")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
             }
         }
         .onAppear {
-            // Попытаемся найти текущую роль пользователя
+            // Try to find the user's current role
             if let user = groupService.groupMembers.first(where: { $0.id == userId }) {
                 selectedRole = user.role
             }

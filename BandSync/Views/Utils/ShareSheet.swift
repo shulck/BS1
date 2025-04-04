@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Переименовываем компонент, чтобы избежать дублирования
+// Rename the component to avoid duplication
 struct DocumentShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 

@@ -1,26 +1,32 @@
 import SwiftUI
 
-// Расширение для типа события, чтобы добавить цветовую кодировку
+// Extension for event type to add color coding
 extension EventType {
-    var color: Color {
+    // Using colorHex instead of duplicate color property
+    var color: String {
+        return colorHex
+    }
+    
+    // Get icon for event type
+    var icon: String {
         switch self {
-        case .concert:
-            return Color.red
-        case .rehearsal:
-            return Color.blue
-        case .meeting:
-            return Color.green
-        case .interview:
-            return Color.purple
-        case .photoshoot:
-            return Color.orange
-        case .personal:
-            return Color.gray
+        case .concert: return "music.mic"
+        case .festival: return "music.note.list"
+        case .rehearsal: return "pianokeys"
+        case .meeting: return "person.2"
+        case .interview: return "quote.bubble"
+        case .photoshoot: return "camera"
+        case .personal: return "person.crop.circle"
         }
+    }
+    
+    // Return Color object instead of String
+    var uiColor: Color {
+        Color(hex: colorHex)
     }
 }
 
-// Вспомогательное расширение для Event с getters удобными для отображения
+// Helper extension for Event with display-friendly getters
 extension Event {
     var isUpcoming: Bool {
         return date > Date()
@@ -41,6 +47,6 @@ extension Event {
     }
     
     var typeColor: Color {
-        return type.color
+        return type.uiColor  // Fixed: using uiColor instead of color
     }
 }

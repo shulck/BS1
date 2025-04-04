@@ -14,17 +14,17 @@ struct MerchDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Изображение товара
+                // Item image
                 imageSection
 
-                // Основная информация
+                // Main information
                 detailsSection
 
-                // Остатки по размерам
+                // Stock by size
                 stockSection
 
-                // Добавляем кнопку истории продаж
-                Button("История продаж") {
+                // Add sales history button
+                Button("Sales history") {
                     showSalesHistory = true
                 }
                 .frame(maxWidth: .infinity)
@@ -33,7 +33,7 @@ struct MerchDetailView: View {
                 .foregroundColor(.blue)
                 .cornerRadius(10)
 
-                // Кнопка продажи
+                // Sell button
                 sellButton
             }
             .padding()
@@ -46,13 +46,13 @@ struct MerchDetailView: View {
                             Button {
                                 showEditSheet = true
                             } label: {
-                                Label("Редактировать", systemImage: "pencil")
+                                Label("Edit", systemImage: "pencil")
                             }
 
                             Button(role: .destructive) {
                                 showDeleteConfirmation = true
                             } label: {
-                                Label("Удалить", systemImage: "trash")
+                                Label("Delete", systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "ellipsis")
@@ -73,17 +73,17 @@ struct MerchDetailView: View {
         .sheet(isPresented: $showSalesHistory) {
             SalesHistoryView(item: item)
         }
-        .alert("Удалить товар?", isPresented: $showDeleteConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Удалить", role: .destructive) {
+        .alert("Delete item?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
                 deleteItem()
             }
         } message: {
-            Text("Вы уверены, что хотите удалить товар '\(item.name)'? Это действие нельзя отменить.")
+            Text("Are you sure you want to delete item '\(item.name)'? This action cannot be undone.")
         }
     }
 
-    // Секция с изображением
+    // Image section
     private var imageSection: some View {
         Group {
             if isLoadingImage {
@@ -105,28 +105,28 @@ struct MerchDetailView: View {
         }
     }
 
-    // Секция с основными деталями
+    // Details section
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(item.description)
                 .font(.body)
 
             HStack {
-                Text("Категория:")
+                Text("Category:")
                 Spacer()
                 Text(item.category.rawValue)
             }
 
             if let subcategory = item.subcategory {
                 HStack {
-                    Text("Подкатегория:")
+                    Text("Subcategory:")
                     Spacer()
                     Text(subcategory.rawValue)
                 }
             }
 
             HStack {
-                Text("Цена:")
+                Text("Price:")
                 Spacer()
                 Text("\(Int(item.price)) EUR")
                     .bold()
@@ -134,11 +134,11 @@ struct MerchDetailView: View {
         }
     }
 
-    // Секция с остатками
+    // Stock section
     private var stockSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if item.category == .clothing {
-                Text("Остатки по размерам")
+                Text("Stock by sizes")
                     .font(.headline)
 
                 HStack {
@@ -167,7 +167,7 @@ struct MerchDetailView: View {
                     Text("\(item.stock.XXL)")
                 }
             } else {
-                Text("Количество:")
+                Text("Quantity:")
                     .font(.headline)
                 Text("\(item.totalStock)")
                     .font(.title3)
@@ -175,9 +175,9 @@ struct MerchDetailView: View {
         }
     }
 
-    // Кнопка продажи
+    // Sell button
     private var sellButton: some View {
-        Button("Продать товар") {
+        Button("Sell item") {
             showSell = true
         }
         .frame(maxWidth: .infinity)
@@ -187,7 +187,7 @@ struct MerchDetailView: View {
         .cornerRadius(10)
     }
 
-    // Загрузка изображения
+    // Load image
     private func loadImage() {
         guard let imageURLString = item.imageURL else { return }
 
@@ -200,7 +200,7 @@ struct MerchDetailView: View {
         }
     }
 
-    // Удаление товара
+    // Delete item
     private func deleteItem() {
         MerchService.shared.deleteItem(item) { success in
             if success {

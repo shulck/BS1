@@ -29,10 +29,10 @@ final class GroupViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private var cancellables = Set<AnyCancellable>()
     
-    // Создание новой группы
+    // Create a new group
     func createGroup(completion: @escaping (Result<String, Error>) -> Void) {
         guard let userId = AuthService.shared.currentUserUID(), !groupName.isEmpty else {
-            errorMessage = "Необходимо указать название группы"
+            errorMessage = "You must specify a group name"
             completion(.failure(NSError(domain: "EmptyGroupName", code: -1, userInfo: nil)))
             return
         }
@@ -54,61 +54,61 @@ final class GroupViewModel: ObservableObject {
                 self.isLoading = false
                 
                 if let error = error {
-                    self.errorMessage = "Ошибка создания группы: \(error.localizedDescription)"
+                    self.errorMessage = "Error creating group: \(error.localizedDescription)"
                     completion(.failure(error))
                     return
                 }
                 
-                self.successMessage = "Группа успешно создана!"
+                self.successMessage = "Group successfully created!"
                 
-                // Получаем ID созданной группы
+                // Get the ID of the created group
                 self.db.collection("groups")
                     .whereField("code", isEqualTo: groupCode)
                     .getDocuments { snapshot, error in
                         if let error = error {
-                            self.errorMessage = "Ошибка при получении ID группы: \(error.localizedDescription)"
+                            self.errorMessage = "Error getting group ID: \(error.localizedDescription)"
                             completion(.failure(error))
                             return
                         }
                         
                         if let groupId = snapshot?.documents.first?.documentID {
-                            // Обновляем пользователя с ID группы
+                            // Update user with group ID
                             UserService.shared.updateUserGroup(groupId: groupId) { result in
                                 switch result {
                                 case .success:
-                                    // Также обновляем роль пользователя на Admin
+                                    // Also update user role to Admin
                                     self.db.collection("users").document(userId).updateData([
                                         "role": "Admin"
                                     ]) { error in
                                         if let error = error {
-                                            self.errorMessage = "Ошибка назначения администратора: \(error.localizedDescription)"
+                                            self.errorMessage = "Error assigning administrator: \(error.localizedDescription)"
                                             completion(.failure(error))
                                         } else {
                                             completion(.success(groupId))
                                         }
                                     }
                                 case .failure(let error):
-                                    self.errorMessage = "Ошибка обновления пользователя: \(error.localizedDescription)"
+                                    self.errorMessage = "Error updating user: \(error.localizedDescription)"
                                     completion(.failure(error))
                                 }
                             }
                         } else {
-                            self.errorMessage = "Не удалось найти созданную группу"
+                            self.errorMessage = "Could not find created group"
                             completion(.failure(NSError(domain: "GroupNotFound", code: -1, userInfo: nil)))
                         }
                     }
             }
         } catch {
             isLoading = false
-            errorMessage = "Ошибка при создании группы: \(error.localizedDescription)"
+            errorMessage = "Error creating group: \(error.localizedDescription)"
             completion(.failure(error))
         }
     }
     
-    // Присоединение к существующей группе по коду
+    // Join an existing group by code
     func joinGroup(completion: @escaping (Result<Void, Error>) -> Void) {
         guard let userId = AuthService.shared.currentUserUID(), !groupCode.isEmpty else {
-            errorMessage = "Необходимо указать код группы"
+            errorMessage = "You must specify a group code"
             completion(.failure(NSError(domain: "EmptyGroupCode", code: -1, userInfo: nil)))
             return
         }
@@ -123,36 +123,36 @@ final class GroupViewModel: ObservableObject {
                 self.isLoading = false
                 
                 if let error = error {
-                    self.errorMessage = "Ошибка поиска группы: \(error.localizedDescription)"
+                    self.errorMessage = "Error searching for group: \(error.localizedDescription)"
                     completion(.failure(error))
                     return
                 }
                 
                 guard let document = snapshot?.documents.first else {
-                    self.errorMessage = "Группа с таким кодом не найдена"
+                    self.errorMessage = "Group with this code not found"
                     completion(.failure(NSError(domain: "GroupNotFound", code: -1, userInfo: nil)))
                     return
                 }
                 
                 let groupId = document.documentID
                 
-                // Добавляем пользователя в pendingMembers
+                // Add user to pendingMembers
                 self.db.collection("groups").document(groupId).updateData([
                     "pendingMembers": FieldValue.arrayUnion([userId])
                 ]) { error in
                     if let error = error {
-                        self.errorMessage = "Ошибка при присоединении к группе: \(error.localizedDescription)"
+                        self.errorMessage = "Error joining group: \(error.localizedDescription)"
                         completion(.failure(error))
                     } else {
-                        self.successMessage = "Запрос на вступление отправлен. Ожидайте подтверждения."
+                        self.successMessage = "Join request sent. Waiting for confirmation."
                         
-                        // Обновляем groupId пользователя
+                        // Update user's groupId
                         UserService.shared.updateUserGroup(groupId: groupId) { result in
                             switch result {
                             case .success:
                                 completion(.success(()))
                             case .failure(let error):
-                                self.errorMessage = "Ошибка обновления пользователя: \(error.localizedDescription)"
+                                self.errorMessage = "Error updating user: \(error.localizedDescription)"
                                 completion(.failure(error))
                             }
                         }
@@ -161,13 +161,13 @@ final class GroupViewModel: ObservableObject {
             }
     }
     
-    // Загрузка участников группы
+    // Load group members
     func loadGroupMembers(groupId: String) {
         isLoading = true
         
         GroupService.shared.fetchGroup(by: groupId)
         
-        // Подписываемся на обновления группы
+        // Subscribe to group updates
         GroupService.shared.$group
             .receive(on: DispatchQueue.main)
             .sink { [weak self] group in

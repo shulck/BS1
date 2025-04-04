@@ -30,8 +30,8 @@ struct EditMerchView: View {
     var body: some View {
         NavigationView {
             Form {
-                // Изображение товара
-                Section(header: Text("Изображение")) {
+                // Item image
+                Section(header: Text("Image")) {
                     PhotosPicker(selection: $selectedImage, matching: .images) {
                         HStack {
                             if let merchImage = merchImage {
@@ -49,14 +49,14 @@ struct EditMerchView: View {
                                             .frame(height: 200)
                                             .cornerRadius(8)
                                     } else if phase.error != nil {
-                                        Label("Ошибка загрузки изображения", systemImage: "exclamationmark.triangle")
+                                        Label("Error loading image", systemImage: "exclamationmark.triangle")
                                             .foregroundColor(.orange)
                                     } else {
                                         ProgressView()
                                     }
                                 }
                             } else {
-                                Label("Выбрать изображение", systemImage: "photo.on.rectangle")
+                                Label("Select image", systemImage: "photo.on.rectangle")
                             }
                         }
                     }
@@ -71,25 +71,25 @@ struct EditMerchView: View {
                     }
                 }
 
-                // Основная информация
-                Section(header: Text("Информация о товаре")) {
-                    TextField("Название", text: $name)
-                    TextField("Описание", text: $description)
-                    TextField("Цена", text: $price)
+                // Basic information
+                Section(header: Text("Item information")) {
+                    TextField("Name", text: $name)
+                    TextField("Description", text: $description)
+                    TextField("Price", text: $price)
                         .keyboardType(.decimalPad)
-                    TextField("Порог низкого запаса", text: $lowStockThreshold)
+                    TextField("Low stock threshold", text: $lowStockThreshold)
                         .keyboardType(.numberPad)
                 }
 
-                // Категория и подкатегория
-                Section(header: Text("Категория")) {
-                    Picker("Категория", selection: $category) {
+                // Category and subcategory
+                Section(header: Text("Category")) {
+                    Picker("Category", selection: $category) {
                         ForEach(MerchCategory.allCases) {
                             Text($0.rawValue).tag($0)
                         }
                     }
                     .onChange(of: category) { newCategory in
-                        // Если новая категория отличается от старой и подкатегория не принадлежит новой категории
+                        // If new category is different from old one and subcategory doesn't belong to new category
                         if newCategory != item.category,
                            let currentSubcategory = subcategory,
                            !MerchSubcategory.subcategories(for: newCategory).contains(currentSubcategory) {
@@ -97,16 +97,16 @@ struct EditMerchView: View {
                         }
                     }
 
-                    Picker("Подкатегория", selection: $subcategory) {
-                        Text("Не выбрано").tag(Optional<MerchSubcategory>.none)
+                    Picker("Subcategory", selection: $subcategory) {
+                        Text("Not selected").tag(Optional<MerchSubcategory>.none)
                         ForEach(MerchSubcategory.subcategories(for: category), id: \.self) {
                             Text($0.rawValue).tag(Optional<MerchSubcategory>.some($0))
                         }
                     }
                 }
 
-                // Остатки по размерам или количеству
-                Section(header: Text(category == .clothing ? "Остатки по размерам" : "Количество товара")) {
+                // Stock by sizes or quantity
+                Section(header: Text(category == .clothing ? "Stock by sizes" : "Item quantity")) {
                     if category == .clothing {
                         Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
                         Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
@@ -114,22 +114,22 @@ struct EditMerchView: View {
                         Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
                         Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
                     } else {
-                        Stepper("Количество: \(stock.total)", value: $stock.S, in: 0...999)
-                        // Удаляем ссылку на переменную catalogNumber, которая не существует
+                        Stepper("Quantity: \(stock.total)", value: $stock.S, in: 0...999)
+                        // Removing reference to catalogNumber variable which doesn't exist
                     }
                 }
             }
-            .navigationTitle("Редактировать товар")
+            .navigationTitle("Edit Item")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         saveChanges()
                     }
                     .disabled(isUploading || !isFormValid)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }
@@ -137,7 +137,7 @@ struct EditMerchView: View {
             .overlay(
                 Group {
                     if isUploading {
-                        ProgressView("Сохранение...")
+                        ProgressView("Saving...")
                             .progressViewStyle(CircularProgressViewStyle())
                             .padding()
                             .background(Color.white.opacity(0.8))
@@ -151,7 +151,7 @@ struct EditMerchView: View {
         }
     }
 
-    // Проверка валидности формы
+    // Form validation
     private var isFormValid: Bool {
         !name.isEmpty &&
         !price.isEmpty &&
@@ -161,7 +161,7 @@ struct EditMerchView: View {
         (lowStockThreshold as NSString).integerValue >= 0
     }
 
-    // Загрузка текущего изображения
+    // Load current image
     private func loadImage() {
         guard let imageURL = item.imageURL, let url = URL(string: imageURL) else { return }
 
@@ -174,14 +174,14 @@ struct EditMerchView: View {
         }.resume()
     }
 
-    // Сохранение изменений
+    // Save changes
     private func saveChanges() {
         guard let priceValue = Double(price),
               let thresholdValue = Int(lowStockThreshold) else { return }
 
         isUploading = true
 
-        // Создаем обновленный товар
+        // Create updated item
         var updatedItem = item
         updatedItem.name = name
         updatedItem.description = description
@@ -189,18 +189,18 @@ struct EditMerchView: View {
         updatedItem.category = category
         updatedItem.subcategory = subcategory
 
-        // Обновляем остатки в зависимости от категории
+        // Update stock depending on category
         if category == .clothing {
-            // Для одежды сохраняем все размеры
+            // For clothing save all sizes
             updatedItem.stock = stock
         } else {
-            // Для других категорий сохраняем общее количество в S, остальные размеры = 0
+            // For other categories save total quantity in S, other sizes = 0
             updatedItem.stock = MerchSizeStock(S: stock.S, M: 0, L: 0, XL: 0, XXL: 0)
         }
 
         updatedItem.lowStockThreshold = thresholdValue
 
-        // Если выбрано новое изображение, загружаем его
+        // If new image selected, upload it
         if let newImage = merchImage, selectedImage != nil {
             MerchImageManager.shared.uploadImage(newImage, for: updatedItem) { result in
                 DispatchQueue.main.async {
@@ -210,13 +210,13 @@ struct EditMerchView: View {
                         saveItemToDatabase(updatedItem)
 
                     case .failure(let error):
-                        print("Ошибка загрузки изображения: \(error)")
+                        print("Error uploading image: \(error)")
                         isUploading = false
                     }
                 }
             }
         } else {
-            // Иначе сохраняем только данные
+            // Otherwise save only data
             saveItemToDatabase(updatedItem)
         }
     }

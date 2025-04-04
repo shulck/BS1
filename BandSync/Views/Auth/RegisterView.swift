@@ -15,11 +15,11 @@ struct RegisterView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("Регистрация")
+                Text("Registration")
                     .font(.title.bold())
                     .padding(.top)
 
-                TextField("Имя", text: $viewModel.name)
+                TextField("Name", text: $viewModel.name)
                     .textContentType(.name)
                     .textFieldStyle(.roundedBorder)
 
@@ -29,14 +29,14 @@ struct RegisterView: View {
                     .autocapitalization(.none)
                     .textFieldStyle(.roundedBorder)
 
-                SecureField("Пароль", text: $viewModel.password)
+                SecureField("Password", text: $viewModel.password)
                     .textFieldStyle(.roundedBorder)
 
-                TextField("Телефон", text: $viewModel.phone)
+                TextField("Phone", text: $viewModel.phone)
                     .keyboardType(.phonePad)
                     .textFieldStyle(.roundedBorder)
 
-                Button("Зарегистрироваться") {
+                Button("Register") {
                     viewModel.register()
                 }
                 .buttonStyle(.borderedProminent)

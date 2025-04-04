@@ -21,7 +21,7 @@ final class GroupService: ObservableObject {
 
     private let db = Firestore.firestore()
     
-    // Получение информации о группе по ID
+    // Get group information by ID
     func fetchGroup(by id: String) {
         isLoading = true
         
@@ -29,7 +29,7 @@ final class GroupService: ObservableObject {
             guard let self = self else { return }
             
             if let error = error {
-                self.errorMessage = "Ошибка загрузки группы: \(error.localizedDescription)"
+                self.errorMessage = "Error loading group: \(error.localizedDescription)"
                 self.isLoading = false
                 return
             }
@@ -41,21 +41,21 @@ final class GroupService: ObservableObject {
                     self.isLoading = false
                 }
             } else {
-                self.errorMessage = "Ошибка преобразования данных группы"
+                self.errorMessage = "Error converting group data"
                 self.isLoading = false
             }
         }
     }
 
-    // Получение информации о пользователях группы
+    // Get information about group users
     private func fetchGroupMembers(groupId: String) {
         guard let group = self.group else { return }
         
-        // Очистка существующих данных
+        // Clear existing data
         self.groupMembers = []
         self.pendingMembers = []
         
-        // Получение активных участников
+        // Get active members
         for memberId in group.members {
             db.collection("users").document(memberId).getDocument { [weak self] snapshot, error in
                 if let userData = try? snapshot?.data(as: UserModel.self) {
@@ -66,7 +66,7 @@ final class GroupService: ObservableObject {
             }
         }
         
-        // Получение ожидающих подтверждения
+        // Get pending members
         for pendingId in group.pendingMembers {
             db.collection("users").document(pendingId).getDocument { [weak self] snapshot, error in
                 if let userData = try? snapshot?.data(as: UserModel.self) {
@@ -78,7 +78,7 @@ final class GroupService: ObservableObject {
         }
     }
     
-    // Подтверждение пользователя (перевод из pending в members)
+    // Approve user (move from pending to members)
     func approveUser(userId: String) {
         guard let groupId = group?.id else { return }
         isLoading = true
@@ -91,9 +91,9 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка подтверждения пользователя: \(error.localizedDescription)"
+                    self?.errorMessage = "Error approving user: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     if let pendingIndex = self?.pendingMembers.firstIndex(where: { $0.id == userId }) {
                         if let user = self?.pendingMembers[pendingIndex] {
                             self?.groupMembers.append(user)
@@ -105,7 +105,7 @@ final class GroupService: ObservableObject {
         }
     }
 
-    // Отклонение заявки пользователя
+    // Reject user application
     func rejectUser(userId: String) {
         guard let groupId = group?.id else { return }
         isLoading = true
@@ -117,14 +117,14 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка отклонения пользователя: \(error.localizedDescription)"
+                    self?.errorMessage = "Error rejecting user: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     if let pendingIndex = self?.pendingMembers.firstIndex(where: { $0.id == userId }) {
                         self?.pendingMembers.remove(at: pendingIndex)
                     }
                     
-                    // Также нужно очистить groupId в профиле пользователя
+                    // Also need to clear groupId in user profile
                     self?.db.collection("users").document(userId).updateData([
                         "groupId": NSNull()
                     ])
@@ -133,7 +133,7 @@ final class GroupService: ObservableObject {
         }
     }
 
-    // Удаление пользователя из группы
+    // Remove user from group
     func removeUser(userId: String) {
         guard let groupId = group?.id else { return }
         isLoading = true
@@ -145,14 +145,14 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка удаления пользователя: \(error.localizedDescription)"
+                    self?.errorMessage = "Error removing user: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     if let memberIndex = self?.groupMembers.firstIndex(where: { $0.id == userId }) {
                         self?.groupMembers.remove(at: memberIndex)
                     }
                     
-                    // Также нужно очистить groupId в профиле пользователя
+                    // Also need to clear groupId in user profile
                     self?.db.collection("users").document(userId).updateData([
                         "groupId": NSNull()
                     ])
@@ -161,7 +161,7 @@ final class GroupService: ObservableObject {
         }
     }
 
-    // Обновление названия группы
+    // Update group name
     func updateGroupName(_ newName: String) {
         guard let groupId = group?.id else { return }
         isLoading = true
@@ -173,16 +173,16 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка обновления названия: \(error.localizedDescription)"
+                    self?.errorMessage = "Error updating name: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     self?.group?.name = newName
                 }
             }
         }
     }
 
-    // Генерация нового кода приглашения
+    // Generate new invitation code
     func regenerateCode() {
         guard let groupId = group?.id else { return }
         isLoading = true
@@ -196,16 +196,16 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка обновления кода: \(error.localizedDescription)"
+                    self?.errorMessage = "Error updating code: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     self?.group?.code = String(newCode)
                 }
             }
         }
     }
     
-    // Изменение роли пользователя
+    // Change user role
     func changeUserRole(userId: String, newRole: UserModel.UserRole) {
         isLoading = true
         
@@ -216,11 +216,11 @@ final class GroupService: ObservableObject {
                 self?.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = "Ошибка изменения роли: \(error.localizedDescription)"
+                    self?.errorMessage = "Error changing role: \(error.localizedDescription)"
                 } else {
-                    // Обновляем локальные данные
+                    // Update local data
                     if let memberIndex = self?.groupMembers.firstIndex(where: { $0.id == userId }) {
-                        // Для простоты создаем обновленную копию пользователя
+                        // For simplicity, create an updated user copy
                         var updatedUser = self?.groupMembers[memberIndex]
                         updatedUser?.role = newRole
                         

@@ -15,15 +15,15 @@ struct TransactionDetailView: View {
 
     private func categoryIcon(for category: String) -> String {
         switch category {
-        case "Логистика": return "car.fill"
-        case "Питание": return "fork.knife"
-        case "Оборудование": return "guitars"
-        case "Площадка": return "building.2.fill"
-        case "Промо": return "megaphone.fill"
-        case "Другое": return "ellipsis.circle.fill"
-        case "Выступление": return "music.note"
-        case "Мерч": return "tshirt.fill"
-        case "Стриминг": return "headphones"
+        case "Logistics": return "car.fill"
+        case "Food": return "fork.knife"
+        case "Equipment": return "guitars"
+        case "Venue": return "building.2.fill"
+        case "Promo": return "megaphone.fill"
+        case "Other": return "ellipsis.circle.fill"
+        case "Performance": return "music.note"
+        case "Merch": return "tshirt.fill"
+        case "Streaming": return "headphones"
         default: return "questionmark.circle"
         }
     }
@@ -31,7 +31,7 @@ struct TransactionDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Заголовок и сумма с анимацией
+                // Title and amount with animation
                 VStack(spacing: 8) {
                     Text("\(record.type == .income ? "+" : "-")\(String(format: "%.2f", record.amount)) \(record.currency)")
                         .font(.system(size: 38, weight: .bold))
@@ -59,7 +59,7 @@ struct TransactionDetailView: View {
                         )
                 )
                 .overlay(
-                    // Круговой индикатор категории
+                    // Circular category indicator
                     ZStack {
                         Circle()
                             .fill(Color.white)
@@ -81,14 +81,14 @@ struct TransactionDetailView: View {
                 )
                 .padding(.bottom, 30)
 
-                // Детали транзакции с анимацией
+                // Transaction details with animation
                 VStack(alignment: .leading, spacing: 20) {
-                    // Тип транзакции
+                    // Transaction type
                     detailRow(
                         icon: record.type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
                         iconColor: record.type == .income ? .green : .red,
-                        title: "Тип",
-                        value: record.type == .income ? "Доход" : "Расход"
+                        title: "Type",
+                        value: record.type == .income ? "Income" : "Expense"
                     )
                     .opacity(showAnimatedDetails ? 1 : 0)
                     .offset(x: showAnimatedDetails ? 0 : -20)
@@ -96,11 +96,11 @@ struct TransactionDetailView: View {
 
                     Divider()
 
-                    // Категория
+                    // Category
                     detailRow(
                         icon: categoryIcon(for: record.category),
                         iconColor: .blue,
-                        title: "Категория",
+                        title: "Category",
                         value: record.category
                     )
                     .opacity(showAnimatedDetails ? 1 : 0)
@@ -110,7 +110,7 @@ struct TransactionDetailView: View {
                     if !record.details.isEmpty {
                         Divider()
 
-                        // Описание
+                        // Description
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Image(systemName: "doc.text")
@@ -118,7 +118,7 @@ struct TransactionDetailView: View {
                                     .font(.title2)
                                     .frame(width: 28, height: 28)
 
-                                Text("Описание")
+                                Text("Description")
                                     .font(.headline)
                             }
 
@@ -144,8 +144,8 @@ struct TransactionDetailView: View {
                         detailRow(
                             icon: "cloud.slash",
                             iconColor: .orange,
-                            title: "Статус",
-                            value: "Ожидает синхронизации",
+                            title: "Status",
+                            value: "Waiting for synchronization",
                             valueColor: .orange
                         )
                         .opacity(showAnimatedDetails ? 1 : 0)
@@ -160,11 +160,11 @@ struct TransactionDetailView: View {
                 )
                 .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 5)
 
-                // Кнопки действий
+                // Action buttons
                 HStack(spacing: 16) {
                     actionButton(
                         icon: "square.and.arrow.up",
-                        title: "Поделиться",
+                        title: "Share",
                         action: {
                             createPDF()
                         }
@@ -175,10 +175,10 @@ struct TransactionDetailView: View {
 
                     actionButton(
                         icon: "trash",
-                        title: "Удалить",
+                        title: "Delete",
                         color: .red,
                         action: {
-                            // В будущем здесь можно добавить диалог подтверждения удаления
+                            // In the future, a confirmation dialog can be added here
                         }
                     )
                     .opacity(showAnimatedDetails ? 1 : 0)
@@ -187,9 +187,9 @@ struct TransactionDetailView: View {
 
                     actionButton(
                         icon: "arrow.triangle.2.circlepath",
-                        title: "Повторить",
+                        title: "Repeat",
                         action: {
-                            // В будущем здесь можно добавить функционал повторения транзакции
+                            // In the future, functionality for repeating the transaction can be added here
                         }
                     )
                     .opacity(showAnimatedDetails ? 1 : 0)
@@ -200,21 +200,21 @@ struct TransactionDetailView: View {
             }
             .padding()
         }
-        .navigationTitle("Детали операции")
+        .navigationTitle("Transaction Details")
         .sheet(isPresented: $showShareSheet) {
             if let pdf = exportedPDF {
                 DocumentShareSheet(items: [pdf])
             }
         }
         .onAppear {
-            // Запускаем анимацию с небольшой задержкой
+            // Start animation with a small delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 showAnimatedDetails = true
             }
         }
     }
 
-    // Модульный компонент для отображения строки деталей
+    // Modular component for displaying details row
     private func detailRow(icon: String, iconColor: Color, title: String, value: String, valueColor: Color = .secondary) -> some View {
         HStack {
             Image(systemName: icon)
@@ -238,7 +238,7 @@ struct TransactionDetailView: View {
         }
     }
 
-    // Модульный компонент для кнопки действия
+    // Modular component for action button
     private func actionButton(icon: String, title: String, color: Color = .blue, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 8) {
@@ -268,14 +268,14 @@ struct TransactionDetailView: View {
         return fmt.string(from: date)
     }
 
-    // Создание PDF для экспорта - добавляем защиту от краша
+    // Create PDF for export - adding crash protection
     private func createPDF() {
         guard let pdf = generateSafePDF() else { return }
         self.exportedPDF = pdf
         self.showShareSheet = true
     }
 
-    // Отдельный метод для безопасного создания PDF
+    // Separate method for safe PDF creation
     private func generateSafePDF() -> Data? {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
@@ -301,18 +301,18 @@ struct TransactionDetailView: View {
                 .paragraphStyle: paragraphStyle
             ]
 
-            let title = "Финансовая операция"
+            let title = "Financial Transaction"
             title.draw(in: CGRect(x: 50, y: 50, width: 495, height: 30), withAttributes: titleAttributes)
 
             var y = 100.0
             let lineHeight = 25.0
 
             let details = [
-                "Тип: \(record.type == .income ? "Доход" : "Расход")",
-                "Категория: \(record.category)",
-                "Сумма: \(String(format: "%.2f", record.amount)) \(record.currency)",
-                "Дата: \(formatter.string(from: record.date))",
-                "Описание: \(record.details)"
+                "Type: \(record.type == .income ? "Income" : "Expense")",
+                "Category: \(record.category)",
+                "Amount: \(String(format: "%.2f", record.amount)) \(record.currency)",
+                "Date: \(formatter.string(from: record.date))",
+                "Description: \(record.details)"
             ]
 
             for detail in details {
@@ -323,13 +323,13 @@ struct TransactionDetailView: View {
             UIGraphicsEndPDFContext()
             return pdfData as Data
         } catch {
-            print("Ошибка при создании PDF: \(error)")
+            print("Error creating PDF: \(error)")
             return nil
         }
     }
 }
 
-// Исправляем компонент для отображения ShareSheet
+// Fixing component for displaying ShareSheet
 struct TransactionShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
@@ -341,11 +341,11 @@ struct TransactionShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-// Добавление поля для отслеживания статуса синхронизации
+// Adding field to track synchronization status
 extension FinanceRecord {
     var isCached: Bool {
-        // Здесь можно добавить реальную логику проверки статуса кэширования
-        // Для примера просто возвращаем false
+        // Here you can add real logic to check caching status
+        // For example, just return false
         return false
     }
 }

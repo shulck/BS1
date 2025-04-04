@@ -18,8 +18,8 @@ struct AddMerchView: View {
     var body: some View {
         NavigationView {
             Form {
-                // Изображение товара
-                Section(header: Text("Изображение")) {
+                // Item image
+                Section(header: Text("Image")) {
                     PhotosPicker(selection: $selectedImage, matching: .images) {
                         HStack {
                             if let merchImage = merchImage {
@@ -29,7 +29,7 @@ struct AddMerchView: View {
                                     .frame(height: 200)
                                     .cornerRadius(8)
                             } else {
-                                Label("Выбрать изображение", systemImage: "photo.on.rectangle")
+                                Label("Select image", systemImage: "photo.on.rectangle")
                             }
                         }
                     }
@@ -44,31 +44,31 @@ struct AddMerchView: View {
                     }
                 }
 
-                TextField("Название", text: $name)
-                TextField("Описание", text: $description)
-                TextField("Цена", text: $price)
+                TextField("Name", text: $name)
+                TextField("Description", text: $description)
+                TextField("Price", text: $price)
                     .keyboardType(.decimalPad)
 
-                // Категория и подкатегория
-                Picker("Категория", selection: $category) {
+                // Category and subcategory
+                Picker("Category", selection: $category) {
                     ForEach(MerchCategory.allCases) {
                         Text($0.rawValue).tag($0)
                     }
                 }
                 .onChange(of: category) { _ in
-                    // Сбрасываем подкатегорию при смене категории
+                    // Reset subcategory when changing category
                     subcategory = nil
                 }
 
-                // Динамический выбор подкатегории
-                Picker("Подкатегория", selection: $subcategory) {
-                    Text("Не выбрано").tag(Optional<MerchSubcategory>.none)
+                // Dynamic subcategory selection
+                Picker("Subcategory", selection: $subcategory) {
+                    Text("Not selected").tag(Optional<MerchSubcategory>.none)
                     ForEach(MerchSubcategory.subcategories(for: category), id: \.self) {
                         Text($0.rawValue).tag(Optional<MerchSubcategory>.some($0))
                     }
                 }
 
-                Section(header: Text(category == .clothing ? "Остатки по размерам" : "Количество товара")) {
+                Section(header: Text(category == .clothing ? "Stock by sizes" : "Item quantity")) {
                     if category == .clothing {
                         Stepper("S: \(stock.S)", value: $stock.S, in: 0...999)
                         Stepper("M: \(stock.M)", value: $stock.M, in: 0...999)
@@ -76,21 +76,21 @@ struct AddMerchView: View {
                         Stepper("XL: \(stock.XL)", value: $stock.XL, in: 0...999)
                         Stepper("XXL: \(stock.XXL)", value: $stock.XXL, in: 0...999)
                     } else {
-                        Stepper("Количество: \(stock.S)", value: $stock.S, in: 0...999)
+                        Stepper("Quantity: \(stock.S)", value: $stock.S, in: 0...999)
                     }
                 }
             }
-            .navigationTitle("Добавить товар")
+            .navigationTitle("Add Item")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         saveItem()
                     }
                     .disabled(isUploading || !isFormValid)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }
@@ -98,7 +98,7 @@ struct AddMerchView: View {
             .overlay(
                 Group {
                     if isUploading {
-                        ProgressView("Загрузка...")
+                        ProgressView("Uploading...")
                             .progressViewStyle(CircularProgressViewStyle())
                             .padding()
                             .background(Color.white.opacity(0.8))
@@ -109,7 +109,7 @@ struct AddMerchView: View {
         }
     }
 
-    // Проверка валидности формы
+    // Form validation
     private var isFormValid: Bool {
         !name.isEmpty &&
         !price.isEmpty &&
@@ -117,14 +117,14 @@ struct AddMerchView: View {
         (price as NSString).doubleValue > 0
     }
 
-    // Сохранение товара
+    // Save item
     private func saveItem() {
         guard let priceValue = Double(price),
               let groupId = AppState.shared.user?.groupId else { return }
 
         isUploading = true
 
-        // Создаем базовый объект товара
+        // Create base item object
         let baseItem = MerchItem(
             name: name,
             description: description,
@@ -135,13 +135,13 @@ struct AddMerchView: View {
             groupId: groupId
         )
 
-        // Если есть изображение, загружаем его
+        // If there's an image, upload it
         if let merchImage = merchImage {
             MerchImageManager.shared.uploadImage(merchImage, for: baseItem) { result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let url):
-                        // Создаем товар с URL изображения
+                        // Create item with image URL
                         var item = baseItem
                         item.imageURL = url.absoluteString
 
@@ -152,13 +152,13 @@ struct AddMerchView: View {
                             }
                         }
                     case .failure(let error):
-                        print("Ошибка загрузки изображения: \(error)")
+                        print("Error uploading image: \(error)")
                         self.isUploading = false
                     }
                 }
             }
         } else {
-            // Создаем товар без изображения
+            // Create item without image
             MerchService.shared.addItem(baseItem) { success in
                 self.isUploading = false
                 if success {

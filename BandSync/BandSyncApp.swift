@@ -10,12 +10,12 @@ import FirebaseCore
 
 @main
 struct BandSyncApp: App {
-    // Регистрируем AppDelegate
+    // Register AppDelegate
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     init() {
-        // Не вызывайте print() в инициализаторе структуры App
-        // Это приводит к ошибкам компиляции
+        // Don't call print() in the App struct initializer
+        // This leads to compilation errors
     }
     
     var body: some Scene {
@@ -23,10 +23,10 @@ struct BandSyncApp: App {
             SplashView()
                 .environmentObject(AppState.shared)
                 .onAppear {
-                    print("SplashView: появился")
-                    // Гарантируем, что Firebase уже инициализирован
+                    print("SplashView: appeared")
+                    // Ensure Firebase is already initialized
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        print("SplashView: запускаем отложенное обновление состояния авторизации")
+                        print("SplashView: launching deferred auth state update")
                         AppState.shared.refreshAuthState()
                     }
                 }

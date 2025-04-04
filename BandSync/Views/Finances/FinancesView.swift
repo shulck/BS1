@@ -9,30 +9,30 @@ struct FinancesView: View {
     @State private var scannedText = ""
     @State private var extractedFinanceRecord: FinanceRecord?
 
-    // Состояния для фильтрации
+    // States for filtering
     @State private var showFilter = false
     @State private var filterType: FilterType = .all
     @State private var filterPeriod: FilterPeriod = .allTime
 
-    // Перечисления для фильтрации
+    // Enumerations for filtering
     enum FilterType: String, CaseIterable {
-        case all = "Все"
-        case income = "Доходы"
-        case expense = "Расходы"
+        case all = "All"
+        case income = "Income"
+        case expense = "Expenses"
     }
 
     enum FilterPeriod: String, CaseIterable {
-        case allTime = "Всё время"
-        case thisMonth = "Текущий месяц"
-        case last3Months = "3 месяца"
-        case thisYear = "Текущий год"
+        case allTime = "All time"
+        case thisMonth = "Current month"
+        case last3Months = "3 months"
+        case thisYear = "Current year"
     }
 
-    // Отфильтрованные записи
+    // Filtered records
     private var filteredRecords: [FinanceRecord] {
         let filtered = service.records
 
-        // Фильтрация по типу
+        // Filter by type
         let typeFiltered = filtered.filter { record in
             switch filterType {
             case .all: return true
@@ -41,7 +41,7 @@ struct FinancesView: View {
             }
         }
 
-        // Фильтрация по периоду
+        // Filter by period
         return typeFiltered.filter { record in
             let calendar = Calendar.current
             let now = Date()
@@ -68,37 +68,37 @@ struct FinancesView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Сводная секция
+                // Summary section
                 summarySection
 
-                // Секция фильтрации
+                // Filter section
                 filterSection
 
-                // Список транзакций с улучшенным дизайном
+                // Transaction list with improved design
                 transactionListSection
             }
-            .navigationTitle("Финансы")
+            .navigationTitle("Finances")
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    // Кнопка сканера чеков
+                    // Receipt scanner button
                     Button {
                         showScanner = true
                     } label: {
                         Image(systemName: "doc.text.viewfinder")
                     }
 
-                    // Кнопка графика
+                    // Chart button
                     Button {
                         showChart.toggle()
                     } label: {
                         Image(systemName: "chart.bar")
                     }
 
-                    // Кнопка добавления транзакции
+                    // Add transaction button
                     Button {
                         showAdd = true
                     } label: {
-                        Label("Добавить", systemImage: "plus")
+                        Label("Add", systemImage: "plus")
                     }
                 }
             }
@@ -119,21 +119,21 @@ struct FinancesView: View {
         }
     }
 
-    // Улучшенная секция сводной статистики
+    // Improved summary section
     private var summarySection: some View {
         VStack(spacing: 0) {
-            // Информационная панель с общими данными
+            // Information panel with general data
             HStack(spacing: 20) {
-                // Доходы
+                // Income
                 VStack(spacing: 8) {
-                    Text("Доходы")
+                    Text("Income")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     Text("+\(Int(totalIncome))")
                         .font(.title3.bold())
                         .foregroundColor(.green)
 
-                    // Небольшая визуализация доходов
+                    // Small income visualization
                     Capsule()
                         .fill(Color.green.opacity(0.3))
                         .frame(width: 60, height: 4)
@@ -149,16 +149,16 @@ struct FinancesView: View {
                 .background(Color.green.opacity(0.05))
                 .cornerRadius(10)
 
-                // Расходы
+                // Expenses
                 VStack(spacing: 8) {
-                    Text("Расходы")
+                    Text("Expenses")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     Text("-\(Int(totalExpense))")
                         .font(.title3.bold())
                         .foregroundColor(.red)
 
-                    // Небольшая визуализация расходов
+                    // Small expense visualization
                     Capsule()
                         .fill(Color.red.opacity(0.3))
                         .frame(width: 60, height: 4)
@@ -181,9 +181,9 @@ struct FinancesView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
 
-            // Итоговая прибыль
+            // Total profit
             HStack {
-                Text("Прибыль")
+                Text("Profit")
                     .font(.headline)
                 Spacer()
                 Text("\(Int(profit))")
@@ -199,18 +199,18 @@ struct FinancesView: View {
             .padding(.horizontal)
             .padding(.vertical, 10)
 
-            // Мини-график изменения баланса
+            // Mini balance chart
             if !filteredRecords.isEmpty {
                 let balanceHistory = calculateBalanceHistory()
 
                 HStack {
-                    Text("Динамика баланса")
+                    Text("Balance dynamics")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     Spacer()
 
-                    // Динамика в процентах
+                    // Percentage dynamics
                     if balanceHistory.count > 1 {
                         let change = balanceHistory.last! - balanceHistory.first!
                         let percentage = balanceHistory.first! != 0 ? (change / abs(balanceHistory.first!)) * 100 : 0
@@ -236,17 +236,17 @@ struct FinancesView: View {
                         let width = geometry.size.width
                         let height = geometry.size.height - 5
 
-                        // Находим минимальное и максимальное значение для масштабирования
+                        // Find minimum and maximum values for scaling
                         let minValue = balanceHistory.min() ?? 0
                         let maxValue = balanceHistory.max() ?? 0
-                        let range = max(1.0, maxValue - minValue) // избегаем деления на ноль
+                        let range = max(1.0, maxValue - minValue) // avoid division by zero
 
-                        // Начальная точка графика
+                        // Initial point of the chart
                         let firstX: CGFloat = 0
                         let firstY = height - (CGFloat(balanceHistory[0] - minValue) / CGFloat(range)) * height
                         path.move(to: CGPoint(x: firstX, y: firstY))
 
-                        // Рисуем линию графика
+                        // Draw chart line
                         for i in 1..<balanceHistory.count {
                             let x = width * CGFloat(i) / CGFloat(balanceHistory.count - 1)
                             let y = height - (CGFloat(balanceHistory[i] - minValue) / CGFloat(range)) * height
@@ -272,7 +272,7 @@ struct FinancesView: View {
         .background(Color.gray.opacity(0.05))
     }
 
-    // Улучшенная секция фильтрации
+    // Improved filter section
     private var filterSection: some View {
         VStack(spacing: 0) {
             Button {
@@ -284,11 +284,11 @@ struct FinancesView: View {
                     Image(systemName: "line.3.horizontal.decrease.circle.fill")
                         .foregroundColor(filterType != .all || filterPeriod != .allTime ? .blue : .gray)
 
-                    Text("Фильтр")
+                    Text("Filter")
                         .font(.subheadline)
 
                     if filterType != .all || filterPeriod != .allTime {
-                        Text("активен")
+                        Text("active")
                             .font(.caption)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -312,9 +312,9 @@ struct FinancesView: View {
 
             if showFilter {
                 VStack(spacing: 12) {
-                    // Тип транзакции
+                    // Transaction type
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Тип:")
+                        Text("Type:")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
@@ -331,9 +331,9 @@ struct FinancesView: View {
                         .pickerStyle(.segmented)
                     }
 
-                    // Период
+                    // Period
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Период:")
+                        Text("Period:")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
@@ -357,12 +357,12 @@ struct FinancesView: View {
                         }
                     }
 
-                    // Кнопка сброса фильтра
+                    // Reset filter button
                     Button {
                         filterType = .all
                         filterPeriod = .allTime
                     } label: {
-                        Text("Сбросить фильтр")
+                        Text("Reset filter")
                             .font(.footnote)
                             .padding(.vertical, 6)
                             .frame(maxWidth: .infinity)
@@ -387,14 +387,14 @@ struct FinancesView: View {
         }
     }
 
-    // Улучшенный список транзакций
+    // Improved transaction list
     private var transactionListSection: some View {
         List {
-            // Если есть записи - показываем их
+            // If there are records - show them
             if !filteredRecords.isEmpty {
-                // Группировка записей по дате (месяцу)
+                // Group records by date (month)
                 ForEach(groupedByMonth(), id: \.key) { monthData in
-                    // Используем более простой синтаксис Section
+                    // Use simpler Section syntax
                     Section {
                         ForEach(monthData.records) { record in
                             NavigationLink {
@@ -404,9 +404,9 @@ struct FinancesView: View {
                             }
                             .contextMenu {
                                 Button(action: {
-                                    // Создает копию для повтора транзакции
+                                    // Creates a copy for repeating transaction
                                 }) {
-                                    Label("Повторить", systemImage: "arrow.triangle.2.circlepath")
+                                    Label("Repeat", systemImage: "arrow.triangle.2.circlepath")
                                 }
                             }
                         }
@@ -415,18 +415,18 @@ struct FinancesView: View {
                     }
                 }
             } else {
-                // Пустое состояние
+                // Empty state
                 VStack(spacing: 20) {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.system(size: 40))
                         .foregroundColor(.gray.opacity(0.7))
                         .padding(.top, 40)
 
-                    Text("Нет финансовых записей")
+                    Text("No financial records")
                         .font(.headline)
                         .foregroundColor(.gray)
 
-                    Text("Добавьте доход или расход, нажав кнопку «+» в верхнем правом углу")
+                    Text("Add income or expense by clicking the «+» button in the top right corner")
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
                         .foregroundColor(.gray.opacity(0.7))
@@ -435,7 +435,7 @@ struct FinancesView: View {
                     Button {
                         showAdd = true
                     } label: {
-                        Text("Добавить запись")
+                        Text("Add record")
                             .font(.headline)
                             .padding(.vertical, 10)
                             .padding(.horizontal, 20)
@@ -453,9 +453,9 @@ struct FinancesView: View {
         .listStyle(PlainListStyle())
     }
 
-    // Вспомогательные функции для улучшенного дизайна
+    // Helper functions for improved design
 
-    // Группировка по месяцам
+    // Grouping by month
     private func groupedByMonth() -> [MonthRecords] {
         let grouped = Dictionary(grouping: filteredRecords) { record -> Date in
             let calendar = Calendar.current
@@ -468,23 +468,23 @@ struct FinancesView: View {
         }.sorted { $0.key > $1.key }
     }
 
-    // Структура группировки месяцев
+    // Month grouping structure
     struct MonthRecords {
         let key: Date
         let records: [FinanceRecord]
     }
 
-    // Шапка для месяца
+    // Month header
     private func monthHeaderView(for date: Date) -> some View {
         HStack {
-            // Индикатор месяца
+            // Month indicator
             Text(monthFormatter.string(from: date))
                 .font(.headline)
                 .foregroundColor(.primary)
 
             Spacer()
 
-            // Общая сумма за месяц
+            // Total amount for month
             let monthSummary = calculateMonthSummary(for: date)
             Text(monthSummary >= 0 ? "+\(Int(monthSummary))" : "\(Int(monthSummary))")
                 .foregroundColor(monthSummary >= 0 ? .green : .red)
@@ -493,7 +493,7 @@ struct FinancesView: View {
         .padding(.vertical, 5)
     }
 
-    // Расчет общей суммы за месяц
+    // Calculate total for month
     private func calculateMonthSummary(for date: Date) -> Double {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.year, .month], from: date)
@@ -508,17 +508,17 @@ struct FinancesView: View {
             }
     }
 
-    // Форматтер для отображения месяца
+    // Month formatter
     private var monthFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter
     }
 
-    // Строка транзакции
+    // Transaction row
     private func transactionRowView(for record: FinanceRecord) -> some View {
         HStack(spacing: 12) {
-            // Иконка категории
+            // Category icon
             ZStack {
                 Circle()
                     .fill(record.type == .income ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
@@ -529,7 +529,7 @@ struct FinancesView: View {
                     .foregroundColor(record.type == .income ? .green : .red)
             }
 
-            // Информация о транзакции
+            // Transaction information
             VStack(alignment: .leading, spacing: 4) {
                 Text(record.category)
                     .font(.headline)
@@ -554,7 +554,7 @@ struct FinancesView: View {
 
             Spacer()
 
-            // Сумма
+            // Amount
             Text("\(record.type == .income ? "+" : "-")\(Int(record.amount))")
                 .font(.headline)
                 .foregroundColor(record.type == .income ? .green : .red)
@@ -562,7 +562,7 @@ struct FinancesView: View {
         .padding(.vertical, 4)
     }
 
-    // Форматтер для даты в строке
+    // Date formatter for row
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -570,28 +570,28 @@ struct FinancesView: View {
         return formatter
     }
 
-    // Получение иконки для категории
+    // Get icon for category
     private func categoryIcon(for category: String) -> String {
         switch category {
-        case "Логистика": return "car.fill"
-        case "Питание": return "fork.knife"
-        case "Оборудование": return "guitars"
-        case "Проживание": return "house.fill"
-        case "Продвижение": return "megaphone.fill"
-        case "Другое": return "ellipsis.circle.fill"
-        case "Выступления": return "music.note"
-        case "Мерч": return "tshirt.fill"
-        case "Роялти": return "music.quarternote.3"
-        case "Спонсорство": return "dollarsign.circle"
+        case "Logistics": return "car.fill"
+        case "Food": return "fork.knife"
+        case "Equipment": return "guitars"
+        case "Accommodation": return "house.fill"
+        case "Promotion": return "megaphone.fill"
+        case "Other": return "ellipsis.circle.fill"
+        case "Performances": return "music.note"
+        case "Merch": return "tshirt.fill"
+        case "Royalties": return "music.quarternote.3"
+        case "Sponsorship": return "dollarsign.circle"
         default: return "questionmark.circle"
         }
     }
 
-    // Расчет истории баланса для мини-графика
+    // Calculate balance history for mini chart
     private func calculateBalanceHistory() -> [Double] {
         var sortedRecords = filteredRecords.sorted { $0.date < $1.date }
 
-        // Ограничиваем количество точек для графика
+        // Limit number of points for chart
         if sortedRecords.count > 15 {
             let step = sortedRecords.count / 15
             sortedRecords = stride(from: 0, to: sortedRecords.count, by: step).map { sortedRecords[$0] }
@@ -609,7 +609,7 @@ struct FinancesView: View {
             history.append(balance)
         }
 
-        // Если у нас меньше двух точек, добавляем дополнительные
+        // If we have less than two points, add more
         if history.count < 2 {
             if history.isEmpty {
                 history = [0, 0]
@@ -621,7 +621,7 @@ struct FinancesView: View {
         return history
     }
 
-    // Вычисляемые свойства для статистики (используем фильтрованные данные)
+    // Computed properties for statistics (using filtered data)
     private var totalIncome: Double {
         filteredRecords.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
     }

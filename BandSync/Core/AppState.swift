@@ -12,7 +12,7 @@ import FirebaseAuth
 final class AppState: ObservableObject {
     static let shared = AppState()
 
-    @Published var isLoggedIn: Bool = false // Изменили на false для безопасности
+    @Published var isLoggedIn: Bool = false // Changed to false for security
     @Published var user: UserModel?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -20,36 +20,36 @@ final class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
-        print("AppState: инициализация")
+        print("AppState: initialization")
         
-        // Убедитесь, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
-        print("AppState: проверяем состояние авторизации")
+        print("AppState: checking authorization state")
         isLoggedIn = AuthService.shared.isUserLoggedIn()
-        print("AppState: isLoggedIn установлен в \(isLoggedIn)")
+        print("AppState: isLoggedIn set to \(isLoggedIn)")
         
-        print("AppState: настройка подписки на currentUser")
+        print("AppState: setting up subscription to currentUser")
         UserService.shared.$currentUser
             .receive(on: DispatchQueue.main)
             .sink { [weak self] user in
-                print("AppState: получено обновление пользователя: \(user != nil ? "пользователь есть" : "пользователя нет")")
+                print("AppState: received user update: \(user != nil ? "user exists" : "user doesn't exist")")
                 self?.user = user
                 
-                // Когда пользователь меняется, загружаем разрешения
+                // When user changes, load permissions
                 if let groupId = user?.groupId {
-                    print("AppState: пользователь имеет groupId: \(groupId), загружаем разрешения")
+                    print("AppState: user has groupId: \(groupId), loading permissions")
                     PermissionService.shared.fetchPermissions(for: groupId)
                 } else {
-                    print("AppState: пользователь не имеет groupId")
+                    print("AppState: user has no groupId")
                 }
             }
             .store(in: &cancellables)
-        print("AppState: инициализация завершена")
+        print("AppState: initialization completed")
     }
 
     func logout() {
-        print("AppState: начало выхода")
+        print("AppState: starting logout")
         isLoading = true
         
         AuthService.shared.signOut { [weak self] result in
@@ -60,53 +60,53 @@ final class AppState: ObservableObject {
                 
                 switch result {
                 case .success:
-                    print("AppState: выход успешен")
+                    print("AppState: logout successful")
                     self.isLoggedIn = false
                     self.user = nil
                 case .failure(let error):
-                    print("AppState: ошибка при выходе: \(error.localizedDescription)")
-                    self.errorMessage = "Ошибка при выходе: \(error.localizedDescription)"
+                    print("AppState: error during logout: \(error.localizedDescription)")
+                    self.errorMessage = "Error during logout: \(error.localizedDescription)"
                 }
             }
         }
     }
 
     func loadUser() {
-        print("AppState: начало загрузки пользователя")
+        print("AppState: starting user loading")
         isLoading = true
         
         UserService.shared.fetchCurrentUser { [weak self] success in
             guard let self = self else {
-                print("AppState: self = nil при загрузке пользователя")
+                print("AppState: self = nil during user loading")
                 return
             }
             
             DispatchQueue.main.async {
-                print("AppState: завершение загрузки пользователя, успех: \(success)")
+                print("AppState: user loading completed, success: \(success)")
                 self.isLoggedIn = success
                 self.isLoading = false
                 
                 if !success {
-                    self.errorMessage = "Не удалось загрузить данные пользователя"
-                    print("AppState: не удалось загрузить данные пользователя")
+                    self.errorMessage = "Failed to load user data"
+                    print("AppState: failed to load user data")
                 }
             }
         }
     }
 
     func refreshAuthState() {
-        print("AppState: обновление состояния авторизации")
+        print("AppState: refreshing authorization state")
         isLoading = true
         
-        // Убедитесь, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
-        print("AppState: проверка текущего пользователя")
+        print("AppState: checking current user")
         if Auth.auth().currentUser != nil {
-            print("AppState: пользователь авторизован, загружаем данные")
+            print("AppState: user is authorized, loading data")
             loadUser()
         } else {
-            print("AppState: пользователь не авторизован")
+            print("AppState: user is not authorized")
             DispatchQueue.main.async {
                 self.isLoggedIn = false
                 self.user = nil
@@ -115,30 +115,30 @@ final class AppState: ObservableObject {
         }
     }
     
-    // Проверка доступа к модулю для текущего пользователя
+    // Check access to module for current user
     func hasAccess(to moduleType: ModuleType) -> Bool {
-        print("AppState: проверка доступа к модулю \(moduleType.rawValue)")
+        print("AppState: checking access to module \(moduleType.rawValue)")
         guard isLoggedIn, let userRole = user?.role else {
-            print("AppState: доступ к модулю \(moduleType.rawValue) отклонен - не авторизован или нет роли")
+            print("AppState: access to module \(moduleType.rawValue) denied - not authorized or no role")
             return false
         }
         
         let hasAccess = PermissionService.shared.hasAccess(to: moduleType, role: userRole)
-        print("AppState: доступ к модулю \(moduleType.rawValue) \(hasAccess ? "разрешен" : "отклонен")")
+        print("AppState: access to module \(moduleType.rawValue) \(hasAccess ? "allowed" : "denied")")
         return hasAccess
     }
     
-    // Проверка, имеет ли пользователь права на редактирование в модуле
+    // Check if user has edit permissions in the module
     func hasEditPermission(for moduleType: ModuleType) -> Bool {
-        print("AppState: проверка прав на редактирование для модуля \(moduleType.rawValue)")
+        print("AppState: checking edit permissions for module \(moduleType.rawValue)")
         guard isLoggedIn, let userRole = user?.role else {
-            print("AppState: доступ на редактирование для модуля \(moduleType.rawValue) отклонен - не авторизован или нет роли")
+            print("AppState: edit access for module \(moduleType.rawValue) denied - not authorized or no role")
             return false
         }
         
-        // Админы и менеджеры имеют права редактирования
+        // Admins and managers have edit permissions
         let hasPermission = userRole == .admin || userRole == .manager
-        print("AppState: доступ на редактирование для модуля \(moduleType.rawValue) \(hasPermission ? "разрешен" : "отклонен")")
+        print("AppState: edit access for module \(moduleType.rawValue) \(hasPermission ? "allowed" : "denied")")
         return hasPermission
     }
 }

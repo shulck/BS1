@@ -12,114 +12,114 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        print("AppDelegate: начало инициализации")
+        print("AppDelegate: initialization started")
         
-        // Инициализация Firebase через менеджер
-        print("AppDelegate: перед инициализацией Firebase")
+        // Firebase initialization through manager
+        print("AppDelegate: before Firebase initialization")
         FirebaseManager.shared.initialize()
-        print("AppDelegate: после инициализации Firebase")
+        print("AppDelegate: after Firebase initialization")
         
-        // Настройка уведомлений
+        // Notification setup
         UNUserNotificationCenter.current().delegate = self
-        print("AppDelegate: делегат уведомлений установлен")
+        print("AppDelegate: notification delegate set")
         
-        // Настройка Firebase Messaging
+        // Firebase Messaging setup
         Messaging.messaging().delegate = self
-        print("AppDelegate: делегат Messaging установлен")
+        print("AppDelegate: Messaging delegate set")
         
-        // Запрос разрешения на уведомления
+        // Request notification permission
         requestNotificationAuthorization()
         
-        print("AppDelegate: инициализация завершена")
+        print("AppDelegate: initialization completed")
         return true
     }
     
-    // Запрос разрешений на уведомления
+    // Request notification permissions
     private func requestNotificationAuthorization() {
-        print("AppDelegate: запрос разрешения на уведомления")
+        print("AppDelegate: requesting notification permission")
         let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
         UNUserNotificationCenter.current().requestAuthorization(
             options: authOptions,
             completionHandler: { granted, error in
-                print("AppDelegate: разрешение на уведомления \(granted ? "получено" : "отклонено")")
+                print("AppDelegate: notification permission \(granted ? "granted" : "denied")")
                 if let error = error {
-                    print("AppDelegate: ошибка запроса разрешения: \(error)")
+                    print("AppDelegate: permission request error: \(error)")
                 }
             }
         )
         
         UIApplication.shared.registerForRemoteNotifications()
-        print("AppDelegate: регистрация для удаленных уведомлений запрошена")
+        print("AppDelegate: registration for remote notifications requested")
     }
     
-    // Получение FCM токена устройства
+    // Get FCM device token
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         if let token = fcmToken {
-            print("AppDelegate: получен FCM токен: \(token)")
+            print("AppDelegate: FCM token received: \(token)")
         } else {
-            print("AppDelegate: не удалось получить FCM токен")
+            print("AppDelegate: failed to get FCM token")
         }
     }
     
-    // Получение удаленных уведомлений, когда приложение в foreground
+    // Receive remote notifications when app is in foreground
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        print("AppDelegate: получено уведомление в foreground")
-        // Показываем уведомление даже если приложение открыто
+        print("AppDelegate: notification received in foreground")
+        // Show notification even if app is open
         completionHandler([.banner, .sound, .badge])
     }
     
-    // Обработка нажатия на уведомление
+    // Handle notification tap
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        print("AppDelegate: получено нажатие на уведомление: \(userInfo)")
+        print("AppDelegate: notification tap received: \(userInfo)")
         
         completionHandler()
     }
     
-    // Получение токена устройства для удаленных уведомлений
+    // Get device token for remote notifications
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
-        print("AppDelegate: получен токен для удаленных уведомлений: \(token)")
+        print("AppDelegate: device token for remote notifications received: \(token)")
         Messaging.messaging().apnsToken = deviceToken
     }
     
-    // Обработка ошибки регистрации удаленных уведомлений
+    // Handle remote notification registration error
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("AppDelegate: не удалось зарегистрироваться для удаленных уведомлений: \(error.localizedDescription)")
+        print("AppDelegate: failed to register for remote notifications: \(error.localizedDescription)")
     }
     
-    // Обработка открытия URL
+    // Handle URL opening
     func application(
         _ app: UIApplication,
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey : Any] = [:]
     ) -> Bool {
-        print("AppDelegate: приложение открыто через URL: \(url)")
+        print("AppDelegate: app opened via URL: \(url)")
         return true
     }
     
-    // Обработка перехода приложения в фоновый режим
+    // Handle app entering background mode
     func applicationDidEnterBackground(_ application: UIApplication) {
-        print("AppDelegate: приложение перешло в фоновый режим")
+        print("AppDelegate: app entered background mode")
     }
     
-    // Обработка возвращения приложения в активное состояние
+    // Handle app returning to active state
     func applicationWillEnterForeground(_ application: UIApplication) {
-        print("AppDelegate: приложение возвращается в активное состояние")
+        print("AppDelegate: app returning to active state")
     }
 }

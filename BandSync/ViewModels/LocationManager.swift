@@ -24,56 +24,56 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         
-        // Проверяем текущий статус авторизации
+        // Check current authorization status
         authorizationStatus = manager.authorizationStatus
         isAuthorized = authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways
     }
     
-    // Запрос разрешения на использование местоположения
+    // Request location usage permission
     func requestWhenInUseAuthorization() {
         manager.requestWhenInUseAuthorization()
     }
     
-    // Запрос местоположения (однократно)
+    // Request location (one-time)
     func requestLocation(completion: @escaping (CLLocation?) -> Void) {
         if isAuthorized {
             manager.requestLocation()
             
-            // Ждем получения местоположения или используем последнее известное
+            // Wait for location or use last known
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 completion(self.location)
             }
         } else {
-            // Если нет разрешения, запрашиваем его
+            // If no permission, request it
             requestWhenInUseAuthorization()
             completion(nil)
         }
     }
     
-    // Начать отслеживание местоположения
+    // Start location tracking
     func startUpdatingLocation() {
         manager.startUpdatingLocation()
     }
     
-    // Остановить отслеживание местоположения
+    // Stop location tracking
     func stopUpdatingLocation() {
         manager.stopUpdatingLocation()
     }
     
     // MARK: - CLLocationManagerDelegate
     
-    // Получение обновления местоположения
+    // Location update received
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         self.location = location
     }
     
-    // Обработка ошибок
+    // Error handling
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Ошибка определения местоположения: \(error.localizedDescription)")
+        print("Location determination error: \(error.localizedDescription)")
     }
     
-    // Обработка изменения статуса авторизации
+    // Handle authorization status changes
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         isAuthorized = authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways
@@ -81,7 +81,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - Utility Methods
     
-    // Получение названия места по координатам
+    // Get place name from coordinates
     func getPlaceName(for coordinate: CLLocationCoordinate2D, completion: @escaping (String?) -> Void) {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(location) { placemarks, error in
@@ -108,7 +108,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 } else if let administrativeArea = placemark.administrativeArea {
                     placeName = administrativeArea
                 } else {
-                    placeName = "Неизвестное место"
+                    placeName = "Unknown location"
                 }
             }
             
@@ -116,7 +116,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    // Построение маршрута между двумя точками
+    // Calculate route between two points
     func calculateRoute(from source: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D, completion: @escaping (MKRoute?) -> Void) {
         let sourcePlacemark = MKPlacemark(coordinate: source)
         let destinationPlacemark = MKPlacemark(coordinate: destination)
@@ -140,7 +140,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    // Расчет расстояния между двумя точками
+    // Calculate distance between two points
     func distance(from source: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) -> CLLocationDistance {
         let sourceLocation = CLLocation(latitude: source.latitude, longitude: source.longitude)
         let destinationLocation = CLLocation(latitude: destination.latitude, longitude: destination.longitude)
@@ -148,7 +148,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return sourceLocation.distance(from: destinationLocation)
     }
     
-    // Форматирование расстояния для отображения
+    // Format distance for display
     func formatDistance(_ distance: CLLocationDistance) -> String {
         let formatter = MKDistanceFormatter()
         formatter.unitStyle = .abbreviated

@@ -37,13 +37,13 @@ struct SetlistExportView: View {
                         .frame(width: 100, height: 100)
                         .foregroundColor(.gray)
                     
-                    Text("Предпросмотр PDF")
+                    Text("PDF Preview")
                         .font(.title2)
                     
-                    Text("Сетлист: \(setlist.name)")
+                    Text("Setlist: \(setlist.name)")
                         .font(.headline)
                     
-                    Text("\(setlist.songs.count) песен • \(setlist.formattedTotalDuration)")
+                    Text("\(setlist.songs.count) songs • \(setlist.formattedTotalDuration)")
                         .foregroundColor(.secondary)
                 }
                 .padding()
@@ -51,12 +51,12 @@ struct SetlistExportView: View {
             
             Spacer()
             
-            // Кнопки действий
+            // Action buttons
             VStack(spacing: 16) {
                 Button {
                     generatePDF()
                 } label: {
-                    Label("Создать PDF", systemImage: "doc.badge.plus")
+                    Label("Create PDF", systemImage: "doc.badge.plus")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -67,7 +67,7 @@ struct SetlistExportView: View {
                 Button {
                     showShareSheet = true
                 } label: {
-                    Label("Поделиться", systemImage: "square.and.arrow.up")
+                    Label("Share", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(pdfData == nil ? Color.gray : Color.green)
@@ -84,11 +84,11 @@ struct SetlistExportView: View {
                     .padding()
             }
         }
-        .navigationTitle("Экспорт сетлиста")
+        .navigationTitle("Export Setlist")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Закрыть") {
+                Button("Close") {
                     dismiss()
                 }
             }
@@ -97,7 +97,7 @@ struct SetlistExportView: View {
             if isExporting {
                 VStack {
                     ProgressView()
-                    Text("Генерация PDF...")
+                    Text("Generating PDF...")
                 }
                 .padding()
                 .background(Color.white.opacity(0.9))
@@ -115,7 +115,7 @@ struct SetlistExportView: View {
         }
     }
     
-    // Генерация PDF
+    // PDF Generation
     private func generatePDF() {
         isExporting = true
         errorMessage = nil
@@ -129,14 +129,14 @@ struct SetlistExportView: View {
                 if let pdf = generatedPDF {
                     pdfData = pdf
                 } else {
-                    errorMessage = "Не удалось создать PDF. Пожалуйста, попробуйте снова."
+                    errorMessage = "Failed to create PDF. Please try again."
                 }
             }
         }
     }
 }
 
-// Представление для предпросмотра PDF
+// PDF Preview View
 struct PDFPreviewView: UIViewRepresentable {
     let document: PDFDocument
     
@@ -154,7 +154,7 @@ struct PDFPreviewView: UIViewRepresentable {
     }
 }
 
-// Представление для отправки PDF
+// Share Sheet View
 struct ShareSheet: UIViewControllerRepresentable {
     var items: [Any]
     

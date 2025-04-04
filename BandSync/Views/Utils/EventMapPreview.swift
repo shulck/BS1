@@ -8,25 +8,21 @@ import SwiftUI
 import MapKit
 
 struct EventMapPreview: View {
-    var location: String
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 50.450001, longitude: 30.523333), // Киев
-        span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-    )
-    @State private var annotation: MapAnnotation?
+    let event: Event
+    
+    @State private var region: MKCoordinateRegion
+    @State private var mapPoints: [EventMapPoint] = []
     @State private var isLoading = true
     
     var body: some View {
         ZStack {
-            if let annotation = annotation {
-                Map(coordinateRegion: $region, annotationItems: [annotation]) { item in
-                    MapMarker(coordinate: item.coordinate, tint: item.type.mapColor)
+            Map(coordinateRegion: $region, annotationItems: mapPoints) { point in
+                MapAnnotation(coordinate: point.coordinate) {
+                    // ...existing code...
                 }
-            } else {
-                Map(coordinateRegion: $region)
             }
             
-            // Индикатор загрузки
+            // Loading indicator
             if isLoading {
                 ProgressView()
                     .padding(8)
@@ -35,17 +31,22 @@ struct EventMapPreview: View {
             }
         }
         .onAppear {
-            geocodeLocation()
+            geocodeEventLocation()
         }
     }
     
-    private func geocodeLocation() {
+    private func geocodeEventLocation() {
         isLoading = true
         
+        guard let locationString = event.location, !locationString.isEmpty else {
+            isLoading = false
+            return
+        }
+        
         let geocoder = CLGeocoder()
-        geocoder.geocodeAddressString(location) { placemarks, error in
+        geocoder.geocodeAddressString(locationString) { placemarks, error in
             if let error = error {
-                print("Ошибка геокодирования локации: \(error.localizedDescription)")
+                print("Location geocoding error: \(error.localizedDescription)")
                 isLoading = false
                 return
             }
@@ -55,27 +56,25 @@ struct EventMapPreview: View {
                 return
             }
             
-            // Создаем аннотацию
+            // Create annotation
             let coordinate = location.coordinate
-            let name = placemark.name ?? "Место проведения"
+            let name = placemark.name ?? "Venue"
             let address = formatAddress(from: placemark)
             
-            // Создаем аннотацию для карты
-            let newAnnotation = MapAnnotation(
+            // Create map annotation
+            let newAnnotation = EventMapPoint(
+                id: UUID().uuidString,
                 title: name,
-                subtitle: address,
-                coordinate: coordinate,
-                type: .event,
-                date: nil
+                coordinate: coordinate
             )
             
-            // Обновляем регион и аннотацию
+            // Update region and annotation
             DispatchQueue.main.async {
                 region = MKCoordinateRegion(
                     center: coordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
                 )
-                annotation = newAnnotation
+                mapPoints = [newAnnotation]
                 isLoading = false
             }
         }
@@ -110,20 +109,9 @@ struct EventMapPreview: View {
         }
         
         if address.isEmpty {
-            address = "Неизвестный адрес"
+            address = "Unknown address"
         }
         
         return address
-    }
-}
-
-// Расширение для типа аннотации
-extension MapAnnotation.AnnotationType {
-    var mapColor: Color {
-        switch self {
-        case .event: return .red
-        case .venue: return .orange
-        case .custom: return .blue
-        }
     }
 }

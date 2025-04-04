@@ -26,7 +26,7 @@ final class AuthViewModel: ObservableObject {
                 switch result {
                 case .success:
                     self?.isAuthenticated = true
-                    // Добавляем обновление глобального состояния
+                    // Add global state update
                     AppState.shared.refreshAuthState()
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
@@ -57,7 +57,7 @@ final class AuthViewModel: ObservableObject {
                 self?.isLoading = false
                 switch result {
                 case .success:
-                    self?.errorMessage = "Письмо для сброса отправлено"
+                    self?.errorMessage = "Password reset email sent"
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                 }

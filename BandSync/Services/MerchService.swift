@@ -36,7 +36,7 @@ final class MerchService: ObservableObject {
                     self.isLoading = false
 
                     if let error = error {
-                        self.errorMessage = "Ошибка загрузки товаров: \(error.localizedDescription)"
+                        self.errorMessage = "Error loading products: \(error.localizedDescription)"
                         return
                     }
 
@@ -44,10 +44,10 @@ final class MerchService: ObservableObject {
                         let result = docs.compactMap { try? $0.data(as: MerchItem.self) }
                         self.items = result
 
-                        // Обновляем список товаров с низким запасом
+                        // Update low stock items list
                         self.updateLowStockItems()
 
-                        // Кэшируем данные для офлайн доступа
+                        // Cache data for offline access
                         CacheService.shared.cacheMerch(result, forGroupId: groupId)
                     }
                 }
@@ -62,7 +62,7 @@ final class MerchService: ObservableObject {
 
                 if let error = error {
                     DispatchQueue.main.async {
-                        self.errorMessage = "Ошибка загрузки продаж: \(error.localizedDescription)"
+                        self.errorMessage = "Error loading sales: \(error.localizedDescription)"
                     }
                     return
                 }
@@ -88,7 +88,7 @@ final class MerchService: ObservableObject {
                     self.isLoading = false
 
                     if let error = error {
-                        self.errorMessage = "Ошибка добавления товара: \(error.localizedDescription)"
+                        self.errorMessage = "Error adding product: \(error.localizedDescription)"
                         completion(false)
                     } else {
                         completion(true)
@@ -98,7 +98,7 @@ final class MerchService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации: \(error.localizedDescription)"
+                self.errorMessage = "Serialization error: \(error.localizedDescription)"
                 completion(false)
             }
         }
@@ -113,7 +113,7 @@ final class MerchService: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        // Обновляем поле updatedAt
+        // Update updatedAt field
         var updatedItem = item
         updatedItem.updatedAt = Date()
 
@@ -125,15 +125,15 @@ final class MerchService: ObservableObject {
                     self.isLoading = false
 
                     if let error = error {
-                        self.errorMessage = "Ошибка обновления товара: \(error.localizedDescription)"
+                        self.errorMessage = "Error updating product: \(error.localizedDescription)"
                         completion(false)
                     } else {
-                        // Обновляем локальный список
+                        // Update local list
                         if let index = self.items.firstIndex(where: { $0.id == id }) {
                             self.items[index] = updatedItem
                         }
 
-                        // Обновляем список товаров с низким запасом
+                        // Update low stock items list
                         self.updateLowStockItems()
 
                         completion(true)
@@ -143,7 +143,7 @@ final class MerchService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации: \(error.localizedDescription)"
+                self.errorMessage = "Serialization error: \(error.localizedDescription)"
                 completion(false)
             }
         }
@@ -165,13 +165,13 @@ final class MerchService: ObservableObject {
                 self.isLoading = false
 
                 if let error = error {
-                    self.errorMessage = "Ошибка удаления товара: \(error.localizedDescription)"
+                    self.errorMessage = "Error deleting product: \(error.localizedDescription)"
                     completion(false)
                 } else {
-                    // Удаляем из локального списка
+                    // Remove from local list
                     self.items.removeAll { $0.id == id }
 
-                    // Обновляем список товаров с низким запасом
+                    // Update low stock items list
                     self.updateLowStockItems()
 
                     completion(true)
@@ -196,25 +196,25 @@ final class MerchService: ObservableObject {
             _ = try db.collection("merch_sales").addDocument(from: sale) { [weak self] error in
                 if let error = error {
                     DispatchQueue.main.async {
-                        self?.errorMessage = "Ошибка записи продажи: \(error.localizedDescription)"
+                        self?.errorMessage = "Error recording sale: \(error.localizedDescription)"
                     }
                 }
             }
         } catch {
-            print("Ошибка записи продажи: \(error)")
+            print("Error recording sale: \(error)")
         }
 
         // Update stock
         updateStock(for: item, size: size, delta: -quantity)
 
-        // Auto-add to finances только если это не подарок
+        // Auto-add to finances only if not a gift
         if channel != .gift {
             let record = FinanceRecord(
                 type: .income,
                 amount: Double(quantity) * item.price,
                 currency: "EUR",
-                category: "Мерч",
-                details: "Продажа \(item.name) (размер \(size))",
+                category: "Merchandise",
+                details: "Sale of \(item.name) (size \(size))",
                 date: Date(),
                 receiptUrl: nil,
                 groupId: groupId
@@ -241,34 +241,34 @@ final class MerchService: ObservableObject {
         do {
             try db.collection("merchandise").document(id).setData(from: updated) { [weak self] error in
                 if let error = error {
-                    print("Ошибка обновления стока: \(error)")
+                    print("Error updating stock: \(error)")
                 } else {
-                    // Обновляем локальный список
+                    // Update local list
                     DispatchQueue.main.async {
                         if let index = self?.items.firstIndex(where: { $0.id == id }) {
                             self?.items[index] = updated
                         }
 
-                        // Обновляем список товаров с низким запасом
+                        // Update low stock items list
                         self?.updateLowStockItems()
                     }
                 }
             }
         } catch {
-            print("Ошибка сериализации при обновлении стока: \(error)")
+            print("Serialization error when updating stock: \(error)")
         }
     }
 
-    // MARK: - Методы для работы с изображениями
+    // MARK: - Methods for working with images
 
     func uploadItemImage(_ image: UIImage, for item: MerchItem, completion: @escaping (Result<String, Error>) -> Void) {
         guard let itemId = item.id else {
-            completion(.failure(NSError(domain: "MerchService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Отсутствует ID товара"])))
+            completion(.failure(NSError(domain: "MerchService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing item ID"])))
             return
         }
 
         guard let imageData = image.jpegData(compressionQuality: 0.7) else {
-            completion(.failure(NSError(domain: "MerchService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Не удалось создать данные изображения"])))
+            completion(.failure(NSError(domain: "MerchService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create image data"])))
             return
         }
 
@@ -293,7 +293,7 @@ final class MerchService: ObservableObject {
                 if let url = url {
                     completion(.success(url.absoluteString))
                 } else {
-                    completion(.failure(NSError(domain: "MerchService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Не удалось получить URL изображения"])))
+                    completion(.failure(NSError(domain: "MerchService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to get image URL"])))
                 }
             }
         }
@@ -301,7 +301,7 @@ final class MerchService: ObservableObject {
 
     func uploadItemImages(_ images: [UIImage], for item: MerchItem, completion: @escaping (Result<[String], Error>) -> Void) {
         guard let itemId = item.id else {
-            completion(.failure(NSError(domain: "MerchService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Отсутствует ID товара"])))
+            completion(.failure(NSError(domain: "MerchService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing item ID"])))
             return
         }
 
@@ -343,7 +343,7 @@ final class MerchService: ObservableObject {
 
         imageRef.delete { error in
             if let error = error {
-                print("Ошибка удаления изображения: \(error.localizedDescription)")
+                print("Error deleting image: \(error.localizedDescription)")
                 completion(false)
             } else {
                 completion(true)
@@ -351,29 +351,29 @@ final class MerchService: ObservableObject {
         }
     }
 
-    // MARK: - Методы для работы с низким запасом товаров
+    // MARK: - Methods for working with low stock items
 
     private func updateLowStockItems() {
         lowStockItems = items.filter { $0.hasLowStock }
 
-        // Отправляем уведомление, если есть товары с низким запасом
+        // Send notification if there are low stock items
         if !lowStockItems.isEmpty {
             sendLowStockNotification()
         }
     }
 
     private func sendLowStockNotification() {
-        // Отправляем уведомление только раз в день для каждого товара
+        // Send notification only once a day for each item
         let lastNotificationDate = UserDefaults.standard.object(forKey: "lastLowStockNotificationDate") as? Date ?? Date(timeIntervalSince1970: 0)
         let calendar = Calendar.current
 
         if !calendar.isDateInToday(lastNotificationDate) {
-            // Формируем текст уведомления
+            // Format notification text
             let itemCount = lowStockItems.count
-            let title = "Низкий запас товаров"
-            let body = "У вас \(itemCount) товар\(itemCount == 1 ? "" : "ов") с низким запасом."
+            let title = "Low stock items"
+            let body = "You have \(itemCount) item\(itemCount == 1 ? "" : "s") with low stock."
 
-            // Отправляем уведомление
+            // Send notification
             NotificationManager.shared.scheduleLocalNotification(
                 title: title,
                 body: body,
@@ -382,12 +382,12 @@ final class MerchService: ObservableObject {
                 userInfo: ["type": "low_stock"]
             ) { _ in }
 
-            // Сохраняем дату последнего уведомления
+            // Save last notification date
             UserDefaults.standard.set(Date(), forKey: "lastLowStockNotificationDate")
         }
     }
 
-    // MARK: - Методы для аналитики
+    // MARK: - Analytics methods
 
     func getSalesByPeriod(from startDate: Date, to endDate: Date) -> [MerchSale] {
         return sales.filter { $0.date >= startDate && $0.date <= endDate }
@@ -440,7 +440,7 @@ final class MerchService: ObservableObject {
             itemSalesCount[sale.itemId, default: 0] += sale.quantity
         }
 
-        // Добавляем товары без продаж
+        // Add items with no sales
         for item in items {
             if let id = item.id, itemSalesCount[id] == nil {
                 itemSalesCount[id] = 0
@@ -485,11 +485,11 @@ final class MerchService: ObservableObject {
         return result
     }
 
-    // MARK: - Экспорт данных
+    // MARK: - Data export
 
     func exportSalesData() -> Data? {
-        // Создаем CSV с данными о продажах
-        var csvString = "Дата,Товар,Категория,Подкатегория,Размер,Количество,Цена,Сумма,Канал\n"
+        // Create CSV with sales data
+        var csvString = "Date,Item,Category,Subcategory,Size,Quantity,Price,Amount,Channel\n"
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
@@ -509,7 +509,7 @@ final class MerchService: ObservableObject {
         return csvString.data(using: .utf8)
     }
 
-    // Исправляем метод для работы с опциональной subcategory
+    // Fixing method to work with optional subcategory
     private func filter(_ items: [MerchItem], by searchText: String) -> [MerchItem] {
         return items.filter { item in
             let subcategoryText = item.subcategory?.rawValue ?? ""
@@ -529,15 +529,15 @@ final class MerchService: ObservableObject {
 
         let batch = db.batch()
 
-        // Удаляем запись о продаже
+        // Delete sale record
         let saleRef = db.collection("merch_sales").document(saleId)
         batch.deleteDocument(saleRef)
 
-        // Возвращаем товар в запас
+        // Return item to stock
         if let itemId = item.id {
             let itemRef = db.collection("merchandise").document(itemId)
 
-            // Создаем обновление для возврата товаров в запас
+            // Create update to return items to stock
             var updatedStock = item.stock
             switch sale.size {
             case "S": updatedStock.S += sale.quantity
@@ -554,25 +554,25 @@ final class MerchService: ObservableObject {
                 "updatedAt": Timestamp(date: Date())
             ], forDocument: itemRef)
 
-            // Удаляем или создаем компенсирующую финансовую запись
+            // Delete or create compensating financial record
             let amount = Double(sale.quantity) * item.price
 
-            // Способ 1: Находим и удаляем соответствующую запись в финансах
-            // Ищем запись с той же суммой и датой, близкой к дате продажи
+            // Method 1: Find and delete corresponding finance record
+            // Look for record with same amount and date close to sale date
             findFinanceRecordForSale(sale: sale, item: item) { financeRecord in
                 batch.commit { error in
                     if let error = error {
-                        print("Ошибка отмены продажи: \(error)")
+                        print("Error canceling sale: \(error)")
                         completion(false)
                     } else {
-                        // Обновляем локальные данные
+                        // Update local data
                         DispatchQueue.main.async { [weak self] in
                             guard let self = self else { return }
 
-                            // Удаляем продажу из локального списка
+                            // Remove sale from local list
                             self.sales.removeAll { $0.id == saleId }
 
-                            // Обновляем товар
+                            // Update item
                             if let index = self.items.firstIndex(where: { $0.id == itemId }) {
                                 var updatedItem = self.items[index]
                                 updatedItem.stock = updatedStock
@@ -581,15 +581,15 @@ final class MerchService: ObservableObject {
 
                             self.updateLowStockItems()
 
-                            // Заменяем неверный вызов метода remove на add с противоположным типом транзакции
+                            // Replace incorrect remove method call with add with opposite transaction type
                             if let record = financeRecord {
-                                // Создаем компенсирующую запись вместо вызова несуществующего метода remove
+                                // Create compensating record instead of calling non-existent remove method
                                 let refundRecord = FinanceRecord(
                                     type: .expense,
                                     amount: amount,
                                     currency: "EUR",
-                                    category: "Возврат",
-                                    details: "Отмена продажи мерча: \(item.name) (размер \(sale.size))",
+                                    category: "Refund",
+                                    details: "Merch sale cancellation: \(item.name) (size \(sale.size))",
                                     date: Date(),
                                     receiptUrl: nil,
                                     groupId: item.groupId
@@ -599,13 +599,13 @@ final class MerchService: ObservableObject {
                                     completion(true)
                                 }
                             } else {
-                                // Если не нашли, создаем компенсирующую запись
+                                // If not found, create compensating record
                                 let refundRecord = FinanceRecord(
                                     type: .expense,
                                     amount: amount,
                                     currency: "EUR",
-                                    category: "Возврат",
-                                    details: "Отмена продажи мерча: \(item.name) (размер \(sale.size))",
+                                    category: "Refund",
+                                    details: "Merch sale cancellation: \(item.name) (size \(sale.size))",
                                     date: Date(),
                                     receiptUrl: nil,
                                     groupId: item.groupId
@@ -624,19 +624,19 @@ final class MerchService: ObservableObject {
         }
     }
 
-    // Вспомогательный метод для поиска финансовой записи, связанной с продажей
+    // Helper method to find financial record related to sale
     private func findFinanceRecordForSale(sale: MerchSale, item: MerchItem, completion: @escaping (FinanceRecord?) -> Void) {
         let amount = Double(sale.quantity) * item.price
-        let timeWindow = 60.0 // 60 секунд до и после продажи
+        let timeWindow = 60.0 // 60 seconds before and after sale
 
-        // Исправляем метод для получения финансовых записей - используем существующий метод
-        // В данном случае, просто возвращаем nil, так как не можем точно найти соответствующую запись
+        // Fix method for getting financial records - use existing method
+        // In this case, just return nil as we cannot accurately find the corresponding record
         completion(nil)
 
-        // Вместо попытки найти запись о продаже, просто всегда создаем компенсирующую запись
+        // Instead of trying to find the sale record, always create a compensating record
     }
 
-    // Метод для получения всех продаж конкретного товара
+    // Method to get all sales for a specific item
     func getSalesForItem(_ itemId: String) -> [MerchSale] {
         return sales.filter { $0.itemId == itemId }
     }

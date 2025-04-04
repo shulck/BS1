@@ -27,19 +27,19 @@ struct SetlistView: View {
                         VStack(alignment: .leading) {
                             Text(setlist.name)
                                 .font(.headline)
-                            Text("Длительность: \(setlist.formattedTotalDuration)")
+                            Text("Duration: \(setlist.formattedTotalDuration)")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
                     }
                 }
             }
-            .navigationTitle("Сетлисты")
+            .navigationTitle("Setlists")
             .toolbar {
                 Button {
                     showAdd = true
                 } label: {
-                    Label("Добавить", systemImage: "plus")
+                    Label("Add", systemImage: "plus")
                 }
             }
             .onAppear {

@@ -23,7 +23,7 @@ struct TasksView: View {
         NavigationView {
             List {
                 if !pendingTasks.isEmpty {
-                    Section(header: Text("Текущие задачи")) {
+                    Section(header: Text("Current Tasks")) {
                         ForEach(pendingTasks) { task in
                             TaskRow(task: task)
                         }
@@ -31,19 +31,19 @@ struct TasksView: View {
                 }
 
                 if !completedTasks.isEmpty {
-                    Section(header: Text("Выполнено")) {
+                    Section(header: Text("Completed")) {
                         ForEach(completedTasks) { task in
                             TaskRow(task: task)
                         }
                     }
                 }
             }
-            .navigationTitle("Задачи")
+            .navigationTitle("Tasks")
             .toolbar {
                 Button {
                     showAddTask = true
                 } label: {
-                    Label("Новая задача", systemImage: "plus")
+                    Label("New Task", systemImage: "plus")
                 }
             }
             .onAppear {
@@ -77,7 +77,7 @@ struct TasksView: View {
             VStack(alignment: .leading) {
                 Text(task.title)
                     .font(.headline)
-                Text("До: \(formattedDate(task.dueDate))")
+                Text("Due: \(formattedDate(task.dueDate))")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
@@ -88,7 +88,7 @@ struct TasksView: View {
             Button(role: .destructive) {
                 TaskService.shared.deleteTask(task)
             } label: {
-                Label("Удалить", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
     }

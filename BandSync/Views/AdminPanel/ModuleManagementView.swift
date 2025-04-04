@@ -25,8 +25,8 @@ struct ModuleManagementView: View {
     
     var body: some View {
         List {
-            Section(header: Text("Доступные модули")) {
-                Text("Включите или отключите модули, которые будут доступны участникам группы.")
+            Section(header: Text("Available modules")) {
+                Text("Enable or disable modules that will be available to group members.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
@@ -41,7 +41,7 @@ struct ModuleManagementView: View {
                     Spacer()
                     
                     if module == .admin {
-                        Text("Всегда включен")
+                        Text("Always enabled")
                             .font(.caption)
                             .foregroundColor(.gray)
                     } else {
@@ -60,13 +60,13 @@ struct ModuleManagementView: View {
             }
             
             Section {
-                Button("Сохранить изменения") {
+                Button("Save changes") {
                     saveChanges()
                 }
                 .disabled(isLoading)
             }
             
-            // Сообщения об успехе или ошибке
+            // Success or error messages
             if let success = successMessage {
                 Section {
                     Text(success)
@@ -81,7 +81,7 @@ struct ModuleManagementView: View {
                 }
             }
             
-            // Индикатор загрузки
+            // Loading indicator
             if isLoading {
                 Section {
                     HStack {
@@ -92,13 +92,13 @@ struct ModuleManagementView: View {
                 }
             }
         }
-        .navigationTitle("Управление модулями")
+        .navigationTitle("Module management")
         .onAppear {
             loadModuleSettings()
         }
     }
     
-    // Загрузка текущих настроек модулей
+    // Load current module settings
     private func loadModuleSettings() {
         isLoading = true
         successMessage = nil
@@ -107,28 +107,28 @@ struct ModuleManagementView: View {
         if let groupId = AppState.shared.user?.groupId {
             permissionService.fetchPermissions(for: groupId)
             
-            // Используем задержку, чтобы дать время загрузиться разрешениям
+            // Use delay to give time for permissions to load
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                // Инициализируем список включенных модулей
+                // Initialize list of enabled modules
                 enabledModules = Set(permissionService.permissions?.modules
                     .filter { !$0.roleAccess.isEmpty }
                     .map { $0.moduleId } ?? [])
                 
-                // Admin всегда включен
+                // Admin is always enabled
                 enabledModules.insert(.admin)
                 
                 isLoading = false
             }
         } else {
             isLoading = false
-            errorMessage = "Не удалось определить группу"
+            errorMessage = "Could not determine group"
         }
     }
     
-    // Сохранение изменений
+    // Save changes
     private func saveChanges() {
         guard let permissionId = permissionService.permissions?.id else {
-            errorMessage = "Не удалось найти настройки разрешений"
+            errorMessage = "Could not find permission settings"
             return
         }
         
@@ -136,26 +136,26 @@ struct ModuleManagementView: View {
         successMessage = nil
         errorMessage = nil
         
-        // Для каждого модуля, кроме Admin
+        // For each module except Admin
         for module in modules where module != .admin {
-            // Определяем, какие роли должны иметь доступ
+            // Determine which roles should have access
             let roles: [UserModel.UserRole]
             
             if enabledModules.contains(module) {
-                // Если модуль включен, используем текущие настройки ролей или стандартные
+                // If module is enabled, use current role settings or defaults
                 roles = permissionService.getRolesWithAccess(to: module)
                 
-                // Если нет ролей, устанавливаем стандартные настройки доступа
+                // If no roles, set default access settings
                 if roles.isEmpty {
                     switch module {
                     case .finances, .merchandise, .contacts:
-                        // Финансы, мерч и контакты требуют управленческих прав
+                        // Finances, merch and contacts require management rights
                         permissionService.updateModulePermission(
                             moduleId: module,
                             roles: [.admin, .manager]
                         )
                     case .calendar, .setlists, .tasks, .chats:
-                        // Базовые модули доступны всем
+                        // Basic modules available to all
                         permissionService.updateModulePermission(
                             moduleId: module,
                             roles: [.admin, .manager, .musician, .member]
@@ -165,7 +165,7 @@ struct ModuleManagementView: View {
                     }
                 }
             } else {
-                // Если модуль отключен, устанавливаем пустой список ролей
+                // If module is disabled, set empty role list
                 permissionService.updateModulePermission(
                     moduleId: module,
                     roles: []
@@ -173,10 +173,10 @@ struct ModuleManagementView: View {
             }
         }
         
-        // Задержка для завершения всех операций обновления
+        // Delay to complete all update operations
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             isLoading = false
-            successMessage = "Настройки модулей успешно обновлены"
+            successMessage = "Module settings successfully updated"
         }
     }
 }

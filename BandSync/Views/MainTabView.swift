@@ -8,70 +8,70 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Основные табы (всегда видимые)
+            // Main tabs (always visible)
             
-            // 1. Календарь
+            // 1. Calendar
             if permissionService.currentUserHasAccess(to: .calendar) {
                 CalendarView()
                     .tabItem {
-                        Label("Календарь", systemImage: "calendar")
+                        Label("Calendar", systemImage: "calendar")
                     }
                     .tag(0)
             }
             
-            // 2. Финансы
+            // 2. Finances
             if permissionService.currentUserHasAccess(to: .finances) {
                 FinancesView()
                     .tabItem {
-                        Label("Финансы", systemImage: "dollarsign.circle")
+                        Label("Finances", systemImage: "dollarsign.circle")
                     }
                     .tag(1)
             }
             
-            // 3. Мерч
+            // 3. Merch
             if permissionService.currentUserHasAccess(to: .merchandise) {
                 MerchView()
                     .tabItem {
-                        Label("Мерч", systemImage: "bag")
+                        Label("Merch", systemImage: "bag")
                     }
                     .tag(2)
             }
             
-            // 4. Чаты
+            // 4. Chats
             if permissionService.currentUserHasAccess(to: .chats) {
                 ChatsView()
                     .tabItem {
-                        Label("Чаты", systemImage: "message")
+                        Label("Chats", systemImage: "message")
                     }
                     .tag(3)
             }
             
-            // 5. Еще (More)
+            // 5. More
             MoreMenuView()
                 .tabItem {
-                    Label("Еще", systemImage: "ellipsis")
+                    Label("More", systemImage: "ellipsis")
                 }
                 .tag(4)
         }
         .onAppear {
             appState.loadUser()
             
-            // Если текущая вкладка недоступна, переключаемся на первую доступную
+            // If the current tab is unavailable, switch to the first available one
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 ensureValidTab()
             }
         }
         .onChange(of: permissionService.permissions) { _ in
-            // При изменении разрешений проверяем, что текущая вкладка доступна
+            // When permissions change, check that the current tab is available
             ensureValidTab()
         }
     }
     
-    // Обеспечивает, что выбрана доступная вкладка
+    // Ensures that an accessible tab is selected
     private func ensureValidTab() {
         let modules = permissionService.getCurrentUserAccessibleModules()
         
-        // Проверяем, имеет ли пользователь доступ к текущей вкладке
+        // Check if user has access to the current tab
         var isCurrentTabAccessible = false
         
         switch selectedTab {
@@ -79,16 +79,16 @@ struct MainTabView: View {
         case 1: isCurrentTabAccessible = modules.contains(.finances)
         case 2: isCurrentTabAccessible = modules.contains(.merchandise)
         case 3: isCurrentTabAccessible = modules.contains(.chats)
-        case 4: isCurrentTabAccessible = true // More меню всегда доступно
+        case 4: isCurrentTabAccessible = true // More menu always available
         default: isCurrentTabAccessible = false
         }
         
-        // Если текущая вкладка недоступна, выбираем первую доступную
+        // If current tab is inaccessible, select the first available one
         if !isCurrentTabAccessible {
-            // По умолчанию всегда должна быть доступна вкладка More
+            // By default, the More tab should always be accessible
             selectedTab = 4
             
-            // Проверяем доступность других вкладок в порядке приоритета
+            // Check availability of other tabs by priority
             if modules.contains(.calendar) {
                 selectedTab = 0
             } else if modules.contains(.finances) {
@@ -102,7 +102,7 @@ struct MainTabView: View {
     }
 }
 
-// Представление для меню "Еще"
+// View for the "More" menu
 struct MoreMenuView: View {
     @StateObject private var permissionService = PermissionService.shared
     @State private var selectedOption: String? = nil
@@ -110,40 +110,40 @@ struct MoreMenuView: View {
     var body: some View {
         NavigationView {
             List {
-                // Сетлисты
+                // Setlists
                 if permissionService.currentUserHasAccess(to: .setlists) {
                     NavigationLink(destination: SetlistView()) {
-                        Label("Сетлисты", systemImage: "music.note.list")
+                        Label("Setlists", systemImage: "music.note.list")
                     }
                 }
                 
-                // Задачи
+                // Tasks
                 if permissionService.currentUserHasAccess(to: .tasks) {
                     NavigationLink(destination: TasksView()) {
-                        Label("Задачи", systemImage: "checklist")
+                        Label("Tasks", systemImage: "checklist")
                     }
                 }
                 
-                // Контакты
+                // Contacts
                 if permissionService.currentUserHasAccess(to: .contacts) {
                     NavigationLink(destination: ContactsView()) {
-                        Label("Контакты", systemImage: "person.crop.circle")
+                        Label("Contacts", systemImage: "person.crop.circle")
                     }
                 }
                 
-                // Настройки (доступны всем)
-                NavigationLink(destination: SettingsView()) {
-                    Label("Настройки", systemImage: "gear")
+                // Settings (available to everyone)
+                NavigationLink(destination: NotificationSettingsView()) {
+                    Label("Settings", systemImage: "gear")
                 }
                 
-                // Админ-панель
+                // Admin panel
                 if permissionService.currentUserHasAccess(to: .admin) {
                     NavigationLink(destination: AdminPanelView()) {
-                        Label("Админка", systemImage: "person.3")
+                        Label("Admin", systemImage: "person.3")
                     }
                 }
             }
-            .navigationTitle("Еще")
+            .navigationTitle("More")
             .listStyle(InsetGroupedListStyle())
         }
     }

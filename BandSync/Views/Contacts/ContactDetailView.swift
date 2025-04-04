@@ -21,39 +21,39 @@ struct ContactDetailView: View {
     
     var body: some View {
         Form {
-            // Основная информация
-            Section(header: Text("Информация")) {
+            // Main information
+            Section(header: Text("Information")) {
                 if isEditing {
-                    TextField("Имя", text: $contact.name)
-                    TextField("Роль", text: $contact.role)
+                    TextField("Name", text: $contact.name)
+                    TextField("Role", text: $contact.role)
                 } else {
-                    LabeledContent("Имя", value: contact.name)
-                    LabeledContent("Роль", value: contact.role)
+                    LabeledContent("Name", value: contact.name)
+                    LabeledContent("Role", value: contact.role)
                 }
             }
             
-            // Контактные данные
-            Section(header: Text("Контактные данные")) {
+            // Contact details
+            Section(header: Text("Contact details")) {
                 if isEditing {
-                    TextField("Телефон", text: $contact.phone)
+                    TextField("Phone", text: $contact.phone)
                         .keyboardType(.phonePad)
                     TextField("Email", text: $contact.email)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                 } else {
-                    // Телефон с возможностью звонка
+                    // Phone with call option
                     Button {
                         call(phone: contact.phone)
                     } label: {
                         HStack {
-                            Text("Телефон")
+                            Text("Phone")
                             Spacer()
                             Text(contact.phone)
                                 .foregroundColor(.blue)
                         }
                     }
                     
-                    // Email с возможностью отправки письма
+                    // Email with send option
                     Button {
                         sendEmail(to: contact.email)
                     } label: {
@@ -67,60 +67,60 @@ struct ContactDetailView: View {
                 }
             }
             
-            // Кнопки действий (только в режиме просмотра)
+            // Action buttons (only in view mode)
             if !isEditing {
                 Section {
                     Button {
                         call(phone: contact.phone)
                     } label: {
-                        Label("Позвонить", systemImage: "phone")
+                        Label("Call", systemImage: "phone")
                     }
                     
                     Button {
                         sendEmail(to: contact.email)
                     } label: {
-                        Label("Написать", systemImage: "envelope")
+                        Label("Email", systemImage: "envelope")
                     }
                     
                     Button {
                         sendSMS(to: contact.phone)
                     } label: {
-                        Label("Отправить SMS", systemImage: "message")
+                        Label("Send SMS", systemImage: "message")
                     }
                 }
                 
-                // Кнопка удаления
+                // Delete button
                 if AppState.shared.hasEditPermission(for: .contacts) {
                     Section {
-                        Button("Удалить контакт", role: .destructive) {
+                        Button("Delete contact", role: .destructive) {
                             showingDeleteConfirmation = true
                         }
                     }
                 }
             }
         }
-        .navigationTitle(isEditing ? "Редактирование" : contact.name)
+        .navigationTitle(isEditing ? "Editing" : contact.name)
         .toolbar {
-            // Кнопка редактирования/сохранения
+            // Edit/Save button
             if AppState.shared.hasEditPermission(for: .contacts) {
                 ToolbarItem(placement: .primaryAction) {
                     if isEditing {
-                        Button("Сохранить") {
+                        Button("Save") {
                             saveChanges()
                         }
                     } else {
-                        Button("Редактировать") {
+                        Button("Edit") {
                             isEditing = true
                         }
                     }
                 }
             }
             
-            // Кнопка отмены (только в режиме редактирования)
+            // Cancel button (only in edit mode)
             if isEditing {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
-                        // Восстанавливаем исходные данные
+                    Button("Cancel") {
+                        // Restore original data
                         if let original = contactService.contacts.first(where: { $0.id == contact.id }) {
                             contact = original
                         }
@@ -129,17 +129,17 @@ struct ContactDetailView: View {
                 }
             }
         }
-        .alert("Удалить контакт?", isPresented: $showingDeleteConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Удалить", role: .destructive) {
+        .alert("Delete contact?", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
                 deleteContact()
             }
         } message: {
-            Text("Вы уверены, что хотите удалить этот контакт? Это действие нельзя отменить.")
+            Text("Are you sure you want to delete this contact? This action cannot be undone.")
         }
     }
     
-    // Функция сохранения изменений
+    // Function to save changes
     private func saveChanges() {
         contactService.updateContact(contact) { success in
             if success {
@@ -148,13 +148,13 @@ struct ContactDetailView: View {
         }
     }
     
-    // Функция удаления контакта
+    // Function to delete contact
     private func deleteContact() {
         contactService.deleteContact(contact)
         dismiss()
     }
     
-    // Функция звонка
+    // Function to call
     private func call(phone: String) {
         if let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))"),
            UIApplication.shared.canOpenURL(url) {
@@ -162,7 +162,7 @@ struct ContactDetailView: View {
         }
     }
     
-    // Функция отправки email
+    // Function to send email
     private func sendEmail(to: String) {
         if let url = URL(string: "mailto:\(to)"),
            UIApplication.shared.canOpenURL(url) {
@@ -170,7 +170,7 @@ struct ContactDetailView: View {
         }
     }
     
-    // Функция отправки SMS
+    // Function to send SMS
     private func sendSMS(to: String) {
         if let url = URL(string: "sms:\(to.replacingOccurrences(of: " ", with: ""))"),
            UIApplication.shared.canOpenURL(url) {

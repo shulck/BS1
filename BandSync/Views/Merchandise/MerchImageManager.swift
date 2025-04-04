@@ -16,10 +16,10 @@ class MerchImageManager {
     private init() {}
 
     func uploadImage(_ image: UIImage, for merchItem: MerchItem, completion: @escaping (Result<URL, Error>) -> Void) {
-        // Логика загрузки изображения
-        // Например, через Firebase Storage
+        // Image upload logic
+        // For example, via Firebase Storage
         guard let imageData = image.jpegData(compressionQuality: 0.5) else {
-            completion(.failure(NSError(domain: "ImageUploadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Не удалось конвертировать изображение"])))
+            completion(.failure(NSError(domain: "ImageUploadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not convert image"])))
             return
         }
 
@@ -41,7 +41,7 @@ class MerchImageManager {
                 if let url = url {
                     completion(.success(url))
                 } else {
-                    completion(.failure(NSError(domain: "ImageUploadError", code: -2, userInfo: [NSLocalizedDescriptionKey: "Не удалось получить URL изображения"])))
+                    completion(.failure(NSError(domain: "ImageUploadError", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image URL"])))
                 }
             }
         }

@@ -33,33 +33,33 @@ final class CacheService {
     }()
     
     private init() {
-        // Получаем папку для кэширования
+        // Get cache directory
         cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
             .appendingPathComponent("BandSyncCache")
         
-        // Создаем папку, если ее нет
+        // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: cacheDirectory.path) {
             do {
                 try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
             } catch {
-                print("Ошибка создания кэш-директории: \(error.localizedDescription)")
+                print("Error creating cache directory: \(error.localizedDescription)")
             }
         }
     }
     
-    // MARK: - Общие методы кэширования
+    // MARK: - Common caching methods
     
-    // Сохранение данных в кэш
+    // Save data to cache
     func cacheData<T: Encodable>(_ data: T, forKey key: String) {
         do {
             let data = try encoder.encode(data)
             try data.write(to: cacheDirectory.appendingPathComponent(key))
         } catch {
-            print("Ошибка сохранения в кэш данных для ключа \(key): \(error.localizedDescription)")
+            print("Error saving data to cache for key \(key): \(error.localizedDescription)")
         }
     }
     
-    // Получение данных из кэша
+    // Get data from cache
     func loadData<T: Decodable>(forKey key: String, as type: T.Type) -> T? {
         let fileURL = cacheDirectory.appendingPathComponent(key)
         
@@ -71,17 +71,17 @@ final class CacheService {
             let data = try Data(contentsOf: fileURL)
             return try decoder.decode(type, from: data)
         } catch {
-            print("Ошибка загрузки из кэша данных для ключа \(key): \(error.localizedDescription)")
+            print("Error loading data from cache for key \(key): \(error.localizedDescription)")
             return nil
         }
     }
     
-    // Проверка, есть ли данные в кэше
+    // Check if data exists in cache
     func hasCache(forKey key: String) -> Bool {
         return FileManager.default.fileExists(atPath: cacheDirectory.appendingPathComponent(key).path)
     }
     
-    // Удаление данных из кэша
+    // Remove data from cache
     func removeCache(forKey key: String) {
         let fileURL = cacheDirectory.appendingPathComponent(key)
         
@@ -89,12 +89,12 @@ final class CacheService {
             do {
                 try FileManager.default.removeItem(at: fileURL)
             } catch {
-                print("Ошибка удаления кэша для ключа \(key): \(error.localizedDescription)")
+                print("Error removing cache for key \(key): \(error.localizedDescription)")
             }
         }
     }
     
-    // Очистка всего кэша
+    // Clear all cache
     func clearAllCache() {
         do {
             let contents = try FileManager.default.contentsOfDirectory(
@@ -106,85 +106,85 @@ final class CacheService {
                 try FileManager.default.removeItem(at: url)
             }
         } catch {
-            print("Ошибка очистки кэша: \(error.localizedDescription)")
+            print("Error clearing cache: \(error.localizedDescription)")
         }
     }
     
-    // MARK: - Специфические методы для разных типов данных
+    // MARK: - Specific methods for different data types
     
-    // Кэширование событий
+    // Cache events
     func cacheEvents(_ events: [Event], forGroupId groupId: String) {
         cacheData(events, forKey: "events_\(groupId)")
     }
     
-    // Получение кэшированных событий
+    // Get cached events
     func getCachedEvents(forGroupId groupId: String) -> [Event]? {
         return loadData(forKey: "events_\(groupId)", as: [Event].self)
     }
     
-    // Кэширование сетлистов
+    // Cache setlists
     func cacheSetlists(_ setlists: [Setlist], forGroupId groupId: String) {
         cacheData(setlists, forKey: "setlists_\(groupId)")
     }
     
-    // Получение кэшированных сетлистов
+    // Get cached setlists
     func getCachedSetlists(forGroupId groupId: String) -> [Setlist]? {
         return loadData(forKey: "setlists_\(groupId)", as: [Setlist].self)
     }
     
-    // Кэширование контактов
+    // Cache contacts
     func cacheContacts(_ contacts: [Contact], forGroupId groupId: String) {
         cacheData(contacts, forKey: "contacts_\(groupId)")
     }
     
-    // Получение кэшированных контактов
+    // Get cached contacts
     func getCachedContacts(forGroupId groupId: String) -> [Contact]? {
         return loadData(forKey: "contacts_\(groupId)", as: [Contact].self)
     }
     
-    // Кэширование задач
+    // Cache tasks
     func cacheTasks(_ tasks: [TaskModel], forGroupId groupId: String) {
         cacheData(tasks, forKey: "tasks_\(groupId)")
     }
     
-    // Получение кэшированных задач
+    // Get cached tasks
     func getCachedTasks(forGroupId groupId: String) -> [TaskModel]? {
         return loadData(forKey: "tasks_\(groupId)", as: [TaskModel].self)
     }
     
-    // Кэширование финансовых записей
+    // Cache financial records
     func cacheFinances(_ records: [FinanceRecord], forGroupId groupId: String) {
         cacheData(records, forKey: "finances_\(groupId)")
     }
     
-    // Получение кэшированных финансовых записей
+    // Get cached financial records
     func getCachedFinances(forGroupId groupId: String) -> [FinanceRecord]? {
         return loadData(forKey: "finances_\(groupId)", as: [FinanceRecord].self)
     }
     
-    // Кэширование мерча
+    // Cache merchandise
     func cacheMerch(_ items: [MerchItem], forGroupId groupId: String) {
         cacheData(items, forKey: "merch_\(groupId)")
     }
     
-    // Получение кэшированного мерча
+    // Get cached merchandise
     func getCachedMerch(forGroupId groupId: String) -> [MerchItem]? {
         return loadData(forKey: "merch_\(groupId)", as: [MerchItem].self)
     }
     
-    // Кэширование пользователей
+    // Cache users
     func cacheUsers(_ users: [UserModel], forGroupId groupId: String) {
         cacheData(users, forKey: "users_\(groupId)")
     }
     
-    // Получение кэшированных пользователей
+    // Get cached users
     func getCachedUsers(forGroupId groupId: String) -> [UserModel]? {
         return loadData(forKey: "users_\(groupId)", as: [UserModel].self)
     }
     
-    // MARK: - Служебные методы
+    // MARK: - Service methods
     
-    // Получение метаинформации о кэше
+    // Get cache meta information
     func getCacheInfo() -> [String: Any] {
         do {
             let contents = try FileManager.default.contentsOfDirectory(
@@ -215,7 +215,7 @@ final class CacheService {
                 "oldestCache": oldestDate
             ]
         } catch {
-            print("Ошибка получения информации о кэше: \(error.localizedDescription)")
+            print("Error getting cache information: \(error.localizedDescription)")
             return [
                 "totalSize": 0,
                 "fileCount": 0,
@@ -224,7 +224,7 @@ final class CacheService {
         }
     }
     
-    // Очистка старого кэша (старше 30 дней)
+    // Clear old cache (older than 30 days)
     func clearOldCache() {
         do {
             let contents = try FileManager.default.contentsOfDirectory(
@@ -242,7 +242,7 @@ final class CacheService {
                 }
             }
         } catch {
-            print("Ошибка очистки старого кэша: \(error.localizedDescription)")
+            print("Error clearing old cache: \(error.localizedDescription)")
         }
     }
 }

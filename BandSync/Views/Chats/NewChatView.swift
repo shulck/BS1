@@ -23,18 +23,18 @@ struct NewChatView: View {
     var body: some View {
         NavigationView {
             Form {
-                TextField("Название чата", text: $name)
-                Toggle("Групповой чат", isOn: $isGroup)
+                TextField("Chat name", text: $name)
+                Toggle("Group chat", isOn: $isGroup)
             }
-            .navigationTitle("Новый чат")
+            .navigationTitle("New chat")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Создать") {
+                    Button("Create") {
                         createChat()
                     }
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }

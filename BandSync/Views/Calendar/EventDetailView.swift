@@ -1,127 +1,119 @@
 import SwiftUI
 import MapKit
-import EventKit
 
 struct EventDetailView: View {
     @StateObject private var setlistService = SetlistService.shared
     
-    // Состояние события и интерфейса
+    // Breaking state into smaller parts
     @State private var event: Event
     @State private var isEditing = false
     @State private var showingSetlistSelector = false
     @State private var showingLocationPicker = false
     @State private var showingDeleteConfirmation = false
-    @State private var showingScheduleEditor = false
-    @State private var showingMapOptions = false
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedLocation: LocationDetails?
-    @State private var showingAddToCalendarConfirmation = false
+    @State private var showingScheduleEditor = false
+    @State private var showingNavigationOptions = false
+    @State private var navigationCoordinate: CLLocationCoordinate2D?
+    @State private var navigationName: String = ""
+    @State private var currentViewController: UIViewController?
     @Environment(\.dismiss) var dismiss
     
-    // Проверка прав доступа пользователя для финансовой информации
-    private var hasFinanceAccess: Bool {
-        return AppState.shared.hasEditPermission(for: .finances)
-    }
-    
-    // Упрощенный инициализатор
+    // Simplified initializer
     init(event: Event) {
         self._event = State(initialValue: event)
     }
     
     var body: some View {
-        // Упрощаем структуру, разбивая на подкомпоненты
+        // Simplifying structure by breaking into subcomponents
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Заголовок события
+                // Event header with color indication of type
                 eventHeaderSection
                 
                 Divider()
                 
-                // Секция локации
+                // Location section - always shown as it's mandatory
                 locationSection
                 
                 Divider()
                 
-                // Секция сетлиста (только для соответствующих типов событий)
-                if event.type == .concert || event.type == .rehearsal {
+                // Daily schedule section - only when data is available or in edit mode
+                if isEditing || (event.schedule != nil && !event.schedule!.isEmpty) {
+                    scheduleSection
+                    Divider()
+                }
+                
+                // Setlist section (only for corresponding event types and when data is available)
+                if [.concert, .festival, .rehearsal].contains(event.type) &&
+                   (isEditing || event.setlistId != nil) {
                     setlistSection
                     Divider()
                 }
                 
-                // Финансовая информация (только для определенных ролей)
-                if hasFinanceAccess && event.fee != nil {
+                // Organizer (only when data is available or in edit mode)
+                if [.concert, .festival, .interview, .photoshoot].contains(event.type) &&
+                   (isEditing || hasOrganizerData()) {
+                    organizerSection
+                    Divider()
+                }
+                
+                // Coordinator (only when data is available or in edit mode)
+                if [.concert, .festival].contains(event.type) &&
+                   (isEditing || hasCoordinatorData()) {
+                    coordinatorSection
+                    Divider()
+                }
+                
+                // Hotel (only when data is available or in edit mode)
+                if [.concert, .festival, .photoshoot].contains(event.type) &&
+                   (isEditing || hasHotelData()) {
+                    hotelSection
+                    Divider()
+                }
+                
+                // Fee (only when data is available or in edit mode)
+                if [.concert, .festival, .interview, .photoshoot].contains(event.type) &&
+                   (isEditing || (event.fee != nil && event.currency != nil)) {
                     financesSection
                     Divider()
                 }
                 
-                // Организатор
-                organizerSection
+                // Notes (only when available or in edit mode)
+                if isEditing || (event.notes != nil && !event.notes!.isEmpty) {
+                    notesSection
+                }
                 
-                Divider()
-                
-                // Координатор
-                coordinatorSection
-                
-                Divider()
-                
-                // Отель
-                hotelSection
-                
-                Divider()
-                
-                // Расписание дня
-                scheduleSection
-                
-                Divider()
-                
-                // Заметки
-                notesSection
-                
-                // Отображение ошибок
+                // Display errors
                 if let error = errorMessage {
                     Text(error)
                         .foregroundColor(.red)
                         .padding(.horizontal)
                 }
                 
-                // Кнопки действий
-                if !isEditing {
-                    actionButtonsSection
+                // Delete button (only for admins and managers)
+                if AppState.shared.hasEditPermission(for: .calendar) && !isEditing {
+                    deleteButton
                 }
                 
                 Spacer(minLength: 50)
             }
             .padding(.vertical)
         }
-        .navigationTitle(isEditing ? "Редактирование" : "Событие")
+        .navigationTitle(isEditing ? "Editing" : "Event")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             mainToolbarItems
         }
         .overlay(loadingOverlay)
-        .alert("Удалить событие?", isPresented: $showingDeleteConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Удалить", role: .destructive) {
+        .alert("Delete event?", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
                 deleteEvent()
             }
         } message: {
-            Text("Вы уверены, что хотите удалить это событие? Это действие нельзя отменить.")
-        }
-        .alert("Добавить в календарь", isPresented: $showingAddToCalendarConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Добавить") {
-                addToCalendar()
-            }
-        } message: {
-            Text("Добавить это событие в ваш личный календарь?")
-        }
-        .actionSheet(isPresented: $showingMapOptions) {
-            ActionSheet(title: Text("Открыть карты"), buttons: [
-                .default(Text("Apple Maps")) { openInAppleMaps() },
-                .default(Text("Google Maps")) { openInGoogleMaps() },
-                .cancel()
-            ])
+            Text("Are you sure you want to delete this event? This action cannot be undone.")
         }
         .sheet(isPresented: $showingSetlistSelector) {
             SetlistSelectorView(selectedSetlistId: $event.setlistId)
@@ -140,138 +132,98 @@ struct EventDetailView: View {
         .onAppear {
             setupOnAppear()
         }
+        .background(
+            NavigationServiceHost { viewController in
+                self.currentViewController = viewController
+            }
+        )
     }
     
     // MARK: - UI Components
     
-    // Заголовок события
+    // Event header
     private var eventHeaderSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center) {
-                if isEditing {
-                    TextField("Название события", text: $event.title)
-                        .font(.title.bold())
-                        .padding(.bottom, 4)
-                } else {
-                    Text(event.title)
-                        .font(.title.bold())
-                        .padding(.bottom, 4)
-                }
-                
-                // Индикатор личного события
-                if event.isPersonal {
-                    Image(systemName: "person.fill")
-                        .foregroundColor(event.typeColor)
-                        .background(
-                            Circle()
-                                .fill(event.typeColor.opacity(0.2))
-                                .frame(width: 24, height: 24)
-                        )
-                }
+            if isEditing {
+                TextField("Event name", text: $event.title)
+                    .font(.title.bold())
+                    .padding(.bottom, 4)
+            } else {
+                Text(event.title)
+                    .font(.title.bold())
+                    .foregroundColor(Color(UIColor(hex: event.type.color)))
+                    .padding(.bottom, 4)
             }
             
             eventTypeAndStatusRow
             
             if isEditing {
-                DatePicker("Дата и время", selection: $event.date)
-                
-                Toggle("Личное событие", isOn: $event.isPersonal)
-                    .padding(.top, 5)
+                DatePicker("Date and time", selection: $event.date)
             } else {
-                Label {
-                    Text(formatDate(event.date))
-                } icon: {
-                    Image(systemName: "calendar")
-                        .foregroundColor(event.typeColor)
-                }
+                Label(formatDate(event.date), systemImage: "calendar")
             }
         }
         .padding(.horizontal)
     }
     
-    // Строка с типом и статусом события
+    // Row with event type and status
     private var eventTypeAndStatusRow: some View {
         HStack(spacing: 16) {
             if isEditing {
-                Picker("Тип", selection: $event.type) {
+                Picker("Type", selection: $event.type) {
                     ForEach(EventType.allCases, id: \.self) {
                         Text($0.rawValue).tag($0)
                     }
                 }
             } else {
-                Label {
-                    Text(event.type.rawValue)
-                } icon: {
-                    Image(systemName: getIconForEventType(event.type))
-                        .foregroundColor(event.typeColor)
-                }
+                Label(event.type.rawValue, systemImage: getIconForEventType(event.type))
+                    .foregroundColor(Color(UIColor(hex: event.type.color)))
             }
             
             if isEditing {
-                Picker("Статус", selection: $event.status) {
+                Picker("Status", selection: $event.status) {
                     ForEach(EventStatus.allCases, id: \.self) {
                         Text($0.rawValue).tag($0)
                     }
                 }
             } else {
-                Label {
-                    Text(event.status.rawValue)
-                } icon: {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundColor(getStatusColor(event.status))
-                }
+                Label(event.status.rawValue, systemImage: "checkmark.circle")
             }
         }
     }
     
-    // Секция локации
+    // Location section
     private var locationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Локация")
-                    .font(.headline)
-                
-                Spacer()
-                
-                // Кнопка для открытия локации в картах
-                if !isEditing && event.location != nil {
-                    Button(action: {
-                        showingMapOptions = true
-                    }) {
-                        Label("Маршрут", systemImage: "map")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding(.horizontal)
+            Text("Location")
+                .font(.headline)
+                .padding(.horizontal)
             
             if isEditing {
                 editingLocationView
             } else {
-                if let location = event.location, !location.isEmpty {
-                    VStack(alignment: .leading) {
-                        Text(location)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal)
-                        
-                        // Минимальная карта для предпросмотра локации
-                        EventMapPreview(location: location)
-                            .frame(height: 150)
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                    }
-                } else {
-                    Text("Место не указано")
-                        .foregroundColor(.gray)
+                VStack(spacing: 12) {
+                    EventMapView(event: event)
+                    
+                    if let location = event.location, !location.isEmpty {
+                        Button {
+                            showLocationDirections(address: location, name: event.title)
+                        } label: {
+                            Label("Get directions", systemImage: "arrow.triangle.turn.up.right.diamond")
+                                .foregroundColor(.blue)
+                                .padding(8)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(8)
+                        }
                         .padding(.horizontal)
+                    }
                 }
             }
         }
     }
     
-    // Редактирование локации
+    // Editing location
     private var editingLocationView: some View {
         VStack(spacing: 10) {
             Button(action: {
@@ -280,7 +232,7 @@ struct EventDetailView: View {
                 HStack {
                     Image(systemName: "map")
                         .foregroundColor(.blue)
-                    Text("Выбрать на карте")
+                    Text("Select on map")
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -303,7 +255,7 @@ struct EventDetailView: View {
                 .cornerRadius(8)
                 .padding(.horizontal)
             } else {
-                TextField("Место проведения", text: Binding(
+                TextField("Venue", text: Binding(
                     get: { event.location ?? "" },
                     set: { event.location = $0.isEmpty ? nil : $0 }
                 ))
@@ -315,10 +267,78 @@ struct EventDetailView: View {
         }
     }
     
-    // Секция сетлиста
+    // Daily schedule section
+    private var scheduleSection: some View {
+        Group {
+            if isEditing || (event.schedule != nil && !event.schedule!.isEmpty) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Daily schedule")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    if isEditing {
+                        Button {
+                            showingScheduleEditor = true
+                        } label: {
+                            HStack {
+                                Label(
+                                    event.schedule == nil || event.schedule!.isEmpty ? 
+                                        "Add schedule" : "Edit schedule", 
+                                    systemImage: event.schedule == nil || event.schedule!.isEmpty ? 
+                                        "plus.circle" : "pencil"
+                                )
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                        .padding(.horizontal)
+                    } else if let schedule = event.schedule, !schedule.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(schedule, id: \.self) { item in
+                                if item.contains(" - ") {
+                                    HStack(alignment: .top) {
+                                        let components = item.split(separator: " - ", maxSplits: 1)
+                                        if components.count == 2 {
+                                            Text(String(components[0]))
+                                                .bold()
+                                                .frame(width: 70, alignment: .leading)
+                                            
+                                            Text(String(components[1]))
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+                                } else {
+                                    Text(item)
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                    } else {
+                        Text("No schedule added")
+                            .foregroundColor(.gray)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                    }
+                }
+            }
+        }
+    }
+    
+    // Setlist section
     private var setlistSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Сетлист")
+            Text("Setlist")
                 .font(.headline)
                 .padding(.horizontal)
             
@@ -330,7 +350,7 @@ struct EventDetailView: View {
         }
     }
     
-    // Редактирование сетлиста
+    // Editing setlist
     private var editingSetlistView: some View {
         Button {
             showingSetlistSelector = true
@@ -340,7 +360,7 @@ struct EventDetailView: View {
                    let setlist = setlistService.setlists.first(where: { $0.id == setlistId }) {
                     Label(setlist.name, systemImage: "music.note.list")
                 } else {
-                    Label("Выбрать сетлист", systemImage: "plus.circle")
+                    Label("Select setlist", systemImage: "plus.circle")
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -353,7 +373,7 @@ struct EventDetailView: View {
         .padding(.horizontal)
     }
     
-    // Отображение сетлиста
+    // Displaying setlist
     private var displaySetlistView: some View {
         Group {
             if let setlistId = event.setlistId,
@@ -361,7 +381,7 @@ struct EventDetailView: View {
                 NavigationLink(destination: SetlistDetailView(setlist: setlist)) {
                     VStack(alignment: .leading, spacing: 4) {
                         Label(setlist.name, systemImage: "music.note.list")
-                        Text("\(setlist.songs.count) песен • \(setlist.formattedTotalDuration)")
+                        Text("\(setlist.songs.count) songs • \(setlist.formattedTotalDuration)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -372,7 +392,7 @@ struct EventDetailView: View {
                 }
                 .padding(.horizontal)
             } else {
-                Text("Сетлист не выбран")
+                Text("No setlist selected")
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.gray.opacity(0.1))
@@ -383,96 +403,61 @@ struct EventDetailView: View {
         }
     }
     
-    // Секция финансов
-    private var financesSection: some View {
+    // Organizer section
+    private var organizerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Финансы")
+            Text("Organizer")
                 .font(.headline)
                 .padding(.horizontal)
             
             if isEditing {
-                HStack {
-                    TextField("Сумма", value: Binding(
-                        get: { event.fee ?? 0 },
-                        set: { event.fee = $0 > 0 ? $0 : nil }
-                    ), formatter: NumberFormatter())
-                    .keyboardType(.decimalPad)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    TextField("Валюта", text: Binding(
-                        get: { event.currency ?? "EUR" },
-                        set: { event.currency = $0.isEmpty ? "EUR" : $0 }
-                    ))
-                    .frame(width: 80)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .padding(.horizontal)
+                editingOrganizerView
             } else {
-                if let fee = event.fee, let currency = event.currency {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Label("Гонорар: \(Int(fee)) \(currency)", systemImage: "dollarsign.circle")
-                            Spacer()
-                        }
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
-                } else {
-                    Text("Нет информации о гонораре")
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                        .foregroundColor(.gray)
-                }
+                displayOrganizerView
             }
         }
     }
     
-    // Секция организатора
-    private var organizerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Организатор")
-                .font(.headline)
-                .padding(.horizontal)
+    // Editing organizer information
+    private var editingOrganizerView: some View {
+        VStack(spacing: 10) {
+            TextField("Name", text: Binding(
+                get: { event.organizerName ?? "" },
+                set: { event.organizerName = $0.isEmpty ? nil : $0 }
+            ))
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
             
-            if isEditing {
-                VStack(spacing: 10) {
-                    TextField("Имя", text: Binding(
-                        get: { event.organizerName ?? "" },
-                        set: { event.organizerName = $0.isEmpty ? nil : $0 }
-                    ))
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    TextField("Email", text: Binding(
-                        get: { event.organizerEmail ?? "" },
-                        set: { event.organizerEmail = $0.isEmpty ? nil : $0 }
-                    ))
-                    .keyboardType(.emailAddress)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    TextField("Телефон", text: Binding(
-                        get: { event.organizerPhone ?? "" },
-                        set: { event.organizerPhone = $0.isEmpty ? nil : $0 }
-                    ))
-                    .keyboardType(.phonePad)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .padding(.horizontal)
-            } else {
+            TextField("Email", text: Binding(
+                get: { event.organizerEmail ?? "" },
+                set: { event.organizerEmail = $0.isEmpty ? nil : $0 }
+            ))
+            .keyboardType(.emailAddress)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+            
+            TextField("Phone", text: Binding(
+                get: { event.organizerPhone ?? "" },
+                set: { event.organizerPhone = $0.isEmpty ? nil : $0 }
+            ))
+            .keyboardType(.phonePad)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+        }
+        .padding(.horizontal)
+    }
+    
+    // Displaying organizer information
+    private var displayOrganizerView: some View {
+        Group {
+            // Fixing conditional expression
+            if (event.organizerName != nil && !event.organizerName!.isEmpty) ||
+               (event.organizerEmail != nil && !event.organizerEmail!.isEmpty) ||
+               (event.organizerPhone != nil && !event.organizerPhone!.isEmpty) {
+                
                 VStack(alignment: .leading, spacing: 8) {
                     if let name = event.organizerName, !name.isEmpty {
                         Label(name, systemImage: "person")
@@ -495,11 +480,6 @@ struct EventDetailView: View {
                                 .foregroundColor(.blue)
                         }
                     }
-                    
-                    if event.organizerName == nil && event.organizerEmail == nil && event.organizerPhone == nil {
-                        Text("Нет информации об организаторе")
-                            .foregroundColor(.gray)
-                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -510,43 +490,61 @@ struct EventDetailView: View {
         }
     }
     
-    // Секция координатора
+    // Coordinator section (for festivals and concerts)
     private var coordinatorSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Координатор")
+            Text("Coordinator")
                 .font(.headline)
                 .padding(.horizontal)
             
             if isEditing {
-                VStack(spacing: 10) {
-                    TextField("Имя", text: Binding(
-                        get: { event.coordinatorName ?? "" },
-                        set: { event.coordinatorName = $0.isEmpty ? nil : $0 }
-                    ))
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    TextField("Email", text: Binding(
-                        get: { event.coordinatorEmail ?? "" },
-                        set: { event.coordinatorEmail = $0.isEmpty ? nil : $0 }
-                    ))
-                    .keyboardType(.emailAddress)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    TextField("Телефон", text: Binding(
-                        get: { event.coordinatorPhone ?? "" },
-                        set: { event.coordinatorPhone = $0.isEmpty ? nil : $0 }
-                    ))
-                    .keyboardType(.phonePad)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .padding(.horizontal)
+                editingCoordinatorView
             } else {
+                displayCoordinatorView
+            }
+        }
+    }
+    
+    // Editing coordinator information
+    private var editingCoordinatorView: some View {
+        VStack(spacing: 10) {
+            TextField("Name", text: Binding(
+                get: { event.coordinatorName ?? "" },
+                set: { event.coordinatorName = $0.isEmpty ? nil : $0 }
+            ))
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+            
+            TextField("Email", text: Binding(
+                get: { event.coordinatorEmail ?? "" },
+                set: { event.coordinatorEmail = $0.isEmpty ? nil : $0 }
+            ))
+            .keyboardType(.emailAddress)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+            
+            TextField("Phone", text: Binding(
+                get: { event.coordinatorPhone ?? "" },
+                set: { event.coordinatorPhone = $0.isEmpty ? nil : $0 }
+            ))
+            .keyboardType(.phonePad)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+        }
+        .padding(.horizontal)
+    }
+    
+    // Displaying coordinator information
+    private var displayCoordinatorView: some View {
+        Group {
+            // Fixing conditional expression
+            if (event.coordinatorName != nil && !event.coordinatorName!.isEmpty) ||
+               (event.coordinatorEmail != nil && !event.coordinatorEmail!.isEmpty) ||
+               (event.coordinatorPhone != nil && !event.coordinatorPhone!.isEmpty) {
+                
                 VStack(alignment: .leading, spacing: 8) {
                     if let name = event.coordinatorName, !name.isEmpty {
                         Label(name, systemImage: "person")
@@ -571,7 +569,7 @@ struct EventDetailView: View {
                     }
                     
                     if event.coordinatorName == nil && event.coordinatorEmail == nil && event.coordinatorPhone == nil {
-                        Text("Нет информации о координаторе")
+                        Text("No coordinator information")
                             .foregroundColor(.gray)
                     }
                 }
@@ -584,247 +582,246 @@ struct EventDetailView: View {
         }
     }
     
-    // Секция отеля
+    // Hotel section
     private var hotelSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Проживание")
+            Text("Accommodation")
                 .font(.headline)
                 .padding(.horizontal)
             
             if isEditing {
-                VStack(spacing: 10) {
-                    TextField("Название отеля", text: Binding(
-                        get: { event.hotelName ?? "" },
-                        set: { event.hotelName = $0.isEmpty ? nil : $0 }
-                    ))
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    
-                    // Новое поле для адреса отеля
-                    TextField("Адрес отеля", text: Binding(
-                        get: { event.hotelAddress ?? "" },
-                        set: { event.hotelAddress = $0.isEmpty ? nil : $0 }
-                    ))
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-
-                    if event.hotelName != nil && !event.hotelName!.isEmpty {
-                        DatePicker("Заезд", selection: Binding(
-                            get: { event.hotelCheckIn ?? Date() },
-                            set: { event.hotelCheckIn = $0 }
-                        ), displayedComponents: [.date, .hourAndMinute])
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                        
-                        DatePicker("Выезд", selection: Binding(
-                            get: { event.hotelCheckOut ?? Calendar.current.date(byAdding: .day, value: 1, to: Date())! },
-                            set: { event.hotelCheckOut = $0 }
-                        ), displayedComponents: [.date, .hourAndMinute])
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                }
-                .padding(.horizontal)
+                editingHotelView
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    if let hotelName = event.hotelName, !hotelName.isEmpty {
-                        Label(hotelName, systemImage: "house")
-                        
-                        // Отображение адреса отеля
-                        if let hotelAddress = event.hotelAddress, !hotelAddress.isEmpty {
-                            HStack {
-                                Image(systemName: "mappin.and.ellipse")
-                                    .foregroundColor(.secondary)
-                                Text(hotelAddress)
-                                    .foregroundColor(.secondary)
-                                
-                                // Кнопка для открытия адреса отеля в картах
-                                Button(action: {
-                                    openHotelInMaps()
-                                }) {
-                                    Image(systemName: "map")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                        
-                        if let checkIn = event.hotelCheckIn {
-                            Label("Заезд: \(formatDateTime(checkIn))", systemImage: "arrow.down.to.line")
-                        }
-                        
-                        if let checkOut = event.hotelCheckOut {
-                            Label("Выезд: \(formatDateTime(checkOut))", systemImage: "arrow.up.to.line")
-                        }
-                    } else {
-                        Text("Нет информации об отеле")
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .padding(.horizontal)
+                displayHotelView
             }
         }
     }
     
-    // Секция расписания дня
-    private var scheduleSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Расписание дня")
-                    .font(.headline)
-                
-                Spacer()
-                
-                // Кнопка редактирования расписания
-                if isEditing {
-                    Button(action: {
-                        showingScheduleEditor = true
-                    }) {
-                        Label("Редактировать", systemImage: "pencil")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding(.horizontal)
+    // Editing hotel information
+    private var editingHotelView: some View {
+        VStack(spacing: 10) {
+            TextField("Hotel name", text: Binding(
+                get: { event.hotelName ?? "" },
+                set: { event.hotelName = $0.isEmpty ? nil : $0 }
+            ))
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
             
-            if let schedule = event.schedule, !schedule.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(schedule.indices, id: \.self) { index in
-                        HStack(alignment: .top) {
-                            Text("\(index + 1).")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Text(schedule[index])
-                                .font(.subheadline)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .padding(.horizontal)
-            } else {
-                Text("Нет расписания")
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
-                    .foregroundColor(.gray)
-            }
-        }
-    }
-    
-    // Секция заметок
-    private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Заметки")
-                .font(.headline)
-                .padding(.horizontal)
+            TextField("Hotel address", text: Binding(
+                get: { event.hotelAddress ?? "" },
+                set: { event.hotelAddress = $0.isEmpty ? nil : $0 }
+            ))
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
             
-            if isEditing {
-                TextEditor(text: Binding(
-                    get: { event.notes ?? "" },
-                    set: { event.notes = $0.isEmpty ? nil : $0 }
+            if event.hotelName != nil && !event.hotelName!.isEmpty {
+                DatePicker("Check-in", selection: Binding(
+                    get: { event.hotelCheckIn ?? Date() },
+                    set: { event.hotelCheckIn = $0 }
                 ))
-                .frame(minHeight: 100)
-                .padding(4)
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                
+                DatePicker("Check-out", selection: Binding(
+                    get: { event.hotelCheckOut ?? Calendar.current.date(byAdding: .day, value: 1, to: Date())! },
+                    set: { event.hotelCheckOut = $0 }
+                ))
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    // Displaying hotel information
+    private var displayHotelView: some View {
+        Group {
+            if let hotelName = event.hotelName, !hotelName.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(hotelName, systemImage: "house")
+                    
+                    if let hotelAddress = event.hotelAddress, !hotelAddress.isEmpty {
+                        Label(hotelAddress, systemImage: "location")
+                        
+                        // Adding button to open hotel address in Maps
+                        Button {
+                            openMaps(for: hotelAddress)
+                        } label: {
+                            Label("Open in Maps", systemImage: "map")
+                                .foregroundColor(.blue)
+                        }
+                        
+                        // Button for directions
+                        Button {
+                            NavigationService.shared.navigateToAddress(hotelAddress, name: hotelName)
+                        } label: {
+                            Label("Get directions", systemImage: "arrow.triangle.turn.up.right.diamond")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    if let checkIn = event.hotelCheckIn {
+                        Label("Check-in: \(formatDateTime(checkIn))", systemImage: "arrow.down.to.line")
+                    }
+                    
+                    if let checkOut = event.hotelCheckOut {
+                        Label("Check-out: \(formatDateTime(checkOut))", systemImage: "arrow.up.to.line")
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
                 .padding(.horizontal)
-            } else if let notes = event.notes, !notes.isEmpty {
-                Text(notes)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
-            } else {
-                Text("Нет заметок")
-                    .foregroundColor(.gray)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
             }
         }
     }
     
-    // Кнопки действий
-    private var actionButtonsSection: some View {
-        VStack(spacing: 12) {
-            // Кнопка добавления в календарь
-            Button(action: {
-                showingAddToCalendarConfirmation = true
-            }) {
-                Label("Добавить в календарь", systemImage: "calendar.badge.plus")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .foregroundColor(.blue)
-                    .cornerRadius(8)
-            }
-            .padding(.horizontal)
+    // Finances section
+    private var financesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Finances")
+                .font(.headline)
+                .padding(.horizontal)
             
-            // Кнопка удаления (только для администраторов и менеджеров)
-            if AppState.shared.hasEditPermission(for: .calendar) {
-                Button(action: {
-                    showingDeleteConfirmation = true
-                }) {
-                    Label("Удалить событие", systemImage: "trash")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .cornerRadius(8)
+            if isEditing {
+                editingFinancesView
+            } else {
+                displayFinancesView
+            }
+        }
+    }
+    
+    // Editing financial information
+    private var editingFinancesView: some View {
+        HStack {
+            TextField("Amount", value: Binding(
+                get: { event.fee ?? 0 },
+                set: { event.fee = $0 > 0 ? $0 : nil }
+            ), formatter: NumberFormatter())
+            .keyboardType(.decimalPad)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+            
+            TextField("Currency", text: Binding(
+                get: { event.currency ?? "EUR" },
+                set: { event.currency = $0.isEmpty ? "EUR" : $0 }
+            ))
+            .frame(width: 80)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+        }
+        .padding(.horizontal)
+    }
+    
+    // Displaying financial information
+    private var displayFinancesView: some View {
+        Group {
+            if let fee = event.fee, let currency = event.currency {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Fee: \(Int(fee)) \(currency)", systemImage: "dollarsign")
                 }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
                 .padding(.horizontal)
             }
         }
-        .padding(.top, 12)
     }
     
-    // Элементы панели инструментов
+    // Notes section
+    private var notesSection: some View {
+        Group {
+            if isEditing || (event.notes != nil && !event.notes!.isEmpty) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Notes")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    if isEditing {
+                        TextEditor(text: Binding(
+                            get: { event.notes ?? "" },
+                            set: { event.notes = $0.isEmpty ? nil : $0 }
+                        ))
+                        .frame(minHeight: 100)
+                        .padding(4)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                    } else if let notes = event.notes, !notes.isEmpty {
+                        Text(notes)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                    } else {
+                        Text("No notes")
+                            .foregroundColor(.gray)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                    }
+                }
+            }
+        }
+    }
+    
+    // Delete button
+    private var deleteButton: some View {
+        Button {
+            showingDeleteConfirmation = true
+        } label: {
+            Label("Delete event", systemImage: "trash")
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.red.opacity(0.1))
+                .cornerRadius(8)
+        }
+        .padding(.horizontal)
+        .padding(.top, 16)
+    }
+    
+    // Toolbar items
     @ToolbarContentBuilder
     private var mainToolbarItems: some ToolbarContent {
-        // Кнопка редактирования/сохранения (только для администраторов и менеджеров)
+        // Edit/Save button (only for administrators and managers)
         if AppState.shared.hasEditPermission(for: .calendar) {
             ToolbarItem(placement: .primaryAction) {
                 if isEditing {
-                    Button("Сохранить") {
+                    Button("Save") {
                         saveChanges()
                     }
                     .disabled(event.title.isEmpty || isLoading)
                 } else {
-                    Button("Редактировать") {
+                    Button("Edit") {
                         isEditing = true
                     }
                 }
             }
         }
         
-        // Кнопка отмены (только в режиме редактирования)
+        // Cancel button (only in edit mode)
         if isEditing {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Отмена") {
+                Button("Cancel") {
                     cancelEditing()
                 }
             }
         }
     }
     
-    // Индикатор загрузки
+    // Loading indicator
     private var loadingOverlay: some View {
         Group {
             if isLoading {
@@ -839,21 +836,21 @@ struct EventDetailView: View {
     
     // MARK: - Helper Methods
     
-    // Инициализация при первом появлении
+    // Initialize on first appearance
     private func setupOnAppear() {
         if let groupId = AppState.shared.user?.groupId {
             setlistService.fetchSetlists(for: groupId)
         }
         
-        // Пытаемся извлечь информацию о локации из текстового поля
+        // Try to extract location information from text field
         if selectedLocation == nil, let locationText = event.location, !locationText.isEmpty {
             geocodeEventLocation(locationText)
         }
     }
     
-    // Отмена редактирования
+    // Cancel editing
     private func cancelEditing() {
-        // Восстанавливаем первоначальные данные
+        // Restore original data
         if let original = EventService.shared.events.first(where: { $0.id == event.id }) {
             event = original
             selectedLocation = nil
@@ -861,10 +858,11 @@ struct EventDetailView: View {
         isEditing = false
     }
     
-    // Получение иконки в зависимости от типа события
+    // Get icon depending on event type
     private func getIconForEventType(_ type: EventType) -> String {
         switch type {
         case .concert: return "music.mic"
+        case .festival: return "music.note.list"
         case .rehearsal: return "pianokeys"
         case .meeting: return "person.2"
         case .interview: return "quote.bubble"
@@ -873,15 +871,7 @@ struct EventDetailView: View {
         }
     }
     
-    // Получение цвета статуса
-    private func getStatusColor(_ status: EventStatus) -> Color {
-        switch status {
-        case .booked: return .orange
-        case .confirmed: return .green
-        }
-    }
-    
-    // Форматирование даты
+    // Format date
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -889,7 +879,7 @@ struct EventDetailView: View {
         return formatter.string(from: date)
     }
     
-    // Форматирование даты и времени
+    // Format date and time
     private func formatDateTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -897,7 +887,7 @@ struct EventDetailView: View {
         return formatter.string(from: date)
     }
     
-    // Функция звонка
+    // Call function
     private func call(_ phone: String) {
         if let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))"),
            UIApplication.shared.canOpenURL(url) {
@@ -905,7 +895,7 @@ struct EventDetailView: View {
         }
     }
     
-    // Функция отправки email
+    // Send email function
     private func openMail(_ email: String) {
         if let url = URL(string: "mailto:\(email)"),
            UIApplication.shared.canOpenURL(url) {
@@ -913,43 +903,59 @@ struct EventDetailView: View {
         }
     }
     
-    // Геокодирование текстового описания локации
+    // Open address in Maps function
+    private func openMaps(for address: String) {
+        let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        if let url = URL(string: "http://maps.apple.com/?q=\(encodedAddress)"),
+           UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    // Function for routing directions
+    private func openMapsWithDirections(to coordinate: CLLocationCoordinate2D, name: String) {
+        navigationCoordinate = coordinate
+        navigationName = name
+        showingNavigationOptions = true
+    }
+    
+    // Geocode location text
     private func geocodeEventLocation(_ locationText: String) {
         let geocoder = CLGeocoder()
         
         geocoder.geocodeAddressString(locationText) { placemarks, error in
-            // Проверка на ошибки
+            // Check for errors
             if let error = error {
-                print("Ошибка геокодирования: \(error.localizedDescription)")
+                print("Geocoding error: \(error.localizedDescription)")
                 return
             }
             
-            // Получаем первый результат
+            // Get first result
             guard let placemark = placemarks?.first,
                   let location = placemark.location else {
                 return
             }
             
-            // Получаем название места
+            // Get place name
             let name: String
             if let placemarkName = placemark.name {
                 name = placemarkName
             } else if let eventLocation = self.event.location {
                 name = eventLocation
             } else {
-                name = "Место события"
+                name = "Event location"
             }
             
-            // Получаем адрес
+            // Get address
             let address = self.formatAddress(from: placemark)
             
-            // Создаем идентификатор
+            // Create identifier
             let detailsId = UUID().uuidString
             
-            // Получаем координаты
+            // Get coordinates
             let coordinates = location.coordinate
             
-            // Создаем объект с деталями локации
+            // Create location details object
             let details = LocationDetails(
                 id: detailsId,
                 name: name,
@@ -957,14 +963,14 @@ struct EventDetailView: View {
                 coordinate: coordinates
             )
             
-            // Обновляем локацию в основном потоке
+            // Update location on main thread
             DispatchQueue.main.async {
                 self.selectedLocation = details
             }
         }
     }
     
-    // Форматирование адреса из метки места
+    // Format address from place mark
     private func formatAddress(from placemark: CLPlacemark) -> String {
         var address = ""
         
@@ -994,40 +1000,34 @@ struct EventDetailView: View {
         }
         
         if address.isEmpty {
-            address = "Неизвестный адрес"
+            address = "Unknown address"
         }
         
         return address
     }
     
-    // Сохранение изменений
+    // Save changes
     private func saveChanges() {
         isLoading = true
-        
-        // Очищаем финансовую информацию, если у пользователя нет прав
-        if !hasFinanceAccess {
-            event.fee = nil
-            event.currency = nil
-        }
         
         EventService.shared.updateEvent(event) { success in
             DispatchQueue.main.async {
                 self.isLoading = false
                 
                 if success {
-                    // Обновляем уведомления для событий
+                    // Update notifications for events
                     NotificationManager.shared.scheduleEventNotification(event: self.event)
                     self.isEditing = false
                 } else {
-                    self.errorMessage = "Не удалось сохранить изменения"
+                    self.errorMessage = "Failed to save changes"
                 }
             }
         }
     }
     
-    // Удаление события
+    // Delete event
     private func deleteEvent() {
-        // Отменяем уведомления для этого события
+        // Cancel notifications for this event
         if let eventId = event.id {
             NotificationManager.shared.cancelNotification(withIdentifier: "event_day_before_\(eventId)")
             NotificationManager.shared.cancelNotification(withIdentifier: "event_hour_before_\(eventId)")
@@ -1037,99 +1037,27 @@ struct EventDetailView: View {
         dismiss()
     }
     
-    // Открытие в Apple Maps
-    private func openInAppleMaps() {
-        guard let location = event.location else { return }
-        
-        let geocoder = CLGeocoder()
-        geocoder.geocodeAddressString(location) { placemarks, error in
-            if let error = error {
-                print("Ошибка геокодирования: \(error.localizedDescription)")
-                return
-            }
-            
-            if let placemark = placemarks?.first, let location = placemark.location {
-                let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: location.coordinate))
-                mapItem.name = self.event.title
-                mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
-            }
-        }
+    // Helper methods for checking data availability
+    private func hasOrganizerData() -> Bool {
+        return (event.organizerName != nil && !event.organizerName!.isEmpty) ||
+               (event.organizerEmail != nil && !event.organizerEmail!.isEmpty) ||
+               (event.organizerPhone != nil && !event.organizerPhone!.isEmpty)
     }
-    
-    // Открытие в Google Maps
-    private func openInGoogleMaps() {
-        guard let location = event.location else { return }
-        
-        let encodedLocation = location.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "https://www.google.com/maps/search/?api=1&query=\(encodedLocation)"
-        
-        if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
+
+    private func hasCoordinatorData() -> Bool {
+        return (event.coordinatorName != nil && !event.coordinatorName!.isEmpty) ||
+               (event.coordinatorEmail != nil && !event.coordinatorEmail!.isEmpty) ||
+               (event.coordinatorPhone != nil && !event.coordinatorPhone!.isEmpty)
     }
-    
-    // Открытие адреса отеля в картах
-    private func openHotelInMaps() {
-        guard let hotelAddress = event.hotelAddress else { return }
-        
-        let geocoder = CLGeocoder()
-        geocoder.geocodeAddressString(hotelAddress) { placemarks, error in
-            if let error = error {
-                print("Ошибка геокодирования: \(error.localizedDescription)")
-                return
-            }
-            
-            if let placemark = placemarks?.first, let location = placemark.location {
-                let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: location.coordinate))
-                mapItem.name = self.event.hotelName
-                mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
-            }
-        }
+
+    private func hasHotelData() -> Bool {
+        return (event.hotelName != nil && !event.hotelName!.isEmpty) ||
+               (event.hotelAddress != nil && !event.hotelAddress!.isEmpty) ||
+               event.hotelCheckIn != nil || event.hotelCheckOut != nil
     }
-    
-    // Добавление события в календарь устройства
-    private func addToCalendar() {
-        let eventStore = EKEventStore()
-        
-        // Запрос разрешения на доступ к календарю
-        eventStore.requestAccess(to: .event) { granted, error in
-            if granted && error == nil {
-                // Создаем событие
-                let ekEvent = EKEvent(eventStore: eventStore)
-                ekEvent.title = self.event.title
-                ekEvent.startDate = self.event.date
-                ekEvent.endDate = Calendar.current.date(byAdding: .hour, value: 2, to: self.event.date) ?? self.event.date
-                ekEvent.notes = self.event.notes
-                
-                // Добавляем место
-                if let location = self.event.location {
-                    ekEvent.location = location
-                }
-                
-                // Добавляем предупреждения
-                ekEvent.addAlarm(EKAlarm(relativeOffset: -24*60*60)) // За день
-                ekEvent.addAlarm(EKAlarm(relativeOffset: -60*60))    // За час
-                
-                // Выбираем календарь
-                ekEvent.calendar = eventStore.defaultCalendarForNewEvents
-                
-                do {
-                    try eventStore.save(ekEvent, span: .thisEvent)
-                    
-                    DispatchQueue.main.async {
-                        // Отображаем сообщение об успехе
-                        self.errorMessage = "Событие добавлено в календарь"
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        self.errorMessage = "Ошибка добавления в календарь: \(error.localizedDescription)"
-                    }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Нет доступа к календарю"
-                }
-            }
-        }
+
+    // New function to show route
+    private func showLocationDirections(address: String, name: String) {
+        NavigationService.shared.navigateToAddress(address, name: name)
     }
 }

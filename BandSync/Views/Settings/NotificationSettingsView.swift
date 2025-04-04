@@ -1,6 +1,14 @@
-import SwiftUI
+//
+//  NotificationSettingsView.swift
+//  BandSync
+//
+//  Created by Oleksandr Kuziakin on 02.04.2025.
+//
 
-// Обновленный интерфейс настроек уведомлений
+import SwiftUI
+import Foundation
+import UserNotifications
+
 struct NotificationSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var isLoading = false
@@ -9,7 +17,7 @@ struct NotificationSettingsView: View {
     @State private var showPermissionAlert = false
     
     init() {
-        // Инициализируем настройки из менеджера уведомлений
+        // Initialize settings from the notification manager
         _settings = State(initialValue: NotificationManager.shared.getNotificationSettings())
     }
     
@@ -17,7 +25,7 @@ struct NotificationSettingsView: View {
         NavigationView {
             Form {
                 Section {
-                    Toggle("Включить уведомления", isOn: $notificationsEnabled)
+                    Toggle("Enable notifications", isOn: $notificationsEnabled)
                         .onChange(of: notificationsEnabled) { newValue in
                             if newValue {
                                 requestNotificationPermission()
@@ -26,17 +34,17 @@ struct NotificationSettingsView: View {
                 }
                 
                 if notificationsEnabled {
-                    Section(header: Text("Типы уведомлений")) {
-                        Toggle("События", isOn: $settings.eventNotificationsEnabled)
-                        Toggle("Задачи", isOn: $settings.taskNotificationsEnabled)
-                        Toggle("Сообщения", isOn: $settings.chatNotificationsEnabled)
-                        Toggle("Системные", isOn: $settings.systemNotificationsEnabled)
+                    Section(header: Text("Notification Types")) {
+                        Toggle("Events", isOn: $settings.eventNotificationsEnabled)
+                        Toggle("Tasks", isOn: $settings.taskNotificationsEnabled)
+                        Toggle("Messages", isOn: $settings.chatNotificationsEnabled)
+                        Toggle("System", isOn: $settings.systemNotificationsEnabled)
                     }
                     
-                    Section(header: Text("Напоминания о событиях")) {
-                        Text("Уведомления будут отправлены:")
+                    Section(header: Text("Event Reminders")) {
+                        Text("Notifications will be sent:")
                         
-                        Toggle("За день до события", isOn: Binding(
+                        Toggle("One day before event", isOn: Binding(
                             get: { settings.eventReminderIntervals.contains(24) },
                             set: { newValue in
                                 if newValue {
@@ -49,7 +57,7 @@ struct NotificationSettingsView: View {
                             }
                         ))
                         
-                        Toggle("Вечером накануне (20:00)", isOn: Binding(
+                        Toggle("Evening before (8:00 PM)", isOn: Binding(
                             get: { settings.eventReminderIntervals.contains(12) },
                             set: { newValue in
                                 if newValue {
@@ -62,7 +70,7 @@ struct NotificationSettingsView: View {
                             }
                         ))
                         
-                        Toggle("За час до события", isOn: Binding(
+                        Toggle("One hour before event", isOn: Binding(
                             get: { settings.eventReminderIntervals.contains(1) },
                             set: { newValue in
                                 if newValue {
@@ -75,15 +83,15 @@ struct NotificationSettingsView: View {
                             }
                         ))
                         
-                        // Доп. уведомления для личных событий
-                        Toggle("Доп. уведомления для личных событий", isOn: $settings.personalEventExtraNotifications)
+                        // Additional notifications for personal events
+                        Toggle("Additional notifications for personal events", isOn: $settings.personalEventExtraNotifications)
                             .padding(.top, 4)
                     }
                     
-                    Section(header: Text("Напоминания о задачах")) {
-                        Text("Уведомления будут отправлены:")
+                    Section(header: Text("Task Reminders")) {
+                        Text("Notifications will be sent:")
                         
-                        Toggle("За день до срока", isOn: Binding(
+                        Toggle("One day before deadline", isOn: Binding(
                             get: { settings.taskReminderIntervals.contains(24) },
                             set: { newValue in
                                 if newValue {
@@ -98,22 +106,22 @@ struct NotificationSettingsView: View {
                     }
                     
                     Section {
-                        Button("Проверить уведомления") {
+                        Button("Test Notifications") {
                             sendTestNotification()
                         }
                     }
                 }
             }
-            .navigationTitle("Уведомления")
+            .navigationTitle("Notifications")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         saveSettings()
                     }
                 }
                 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
@@ -132,12 +140,12 @@ struct NotificationSettingsView: View {
             })
             .alert(isPresented: $showPermissionAlert) {
                 Alert(
-                    title: Text("Разрешения"),
-                    message: Text("Чтобы получать уведомления, необходимо дать разрешение в настройках устройства."),
-                    primaryButton: .default(Text("Настройки"), action: {
+                    title: Text("Permissions"),
+                    message: Text("To receive notifications, permission must be granted in device settings."),
+                    primaryButton: .default(Text("Settings"), action: {
                         openSettings()
                     }),
-                    secondaryButton: .cancel(Text("Отмена"), action: {
+                    secondaryButton: .cancel(Text("Cancel"), action: {
                         notificationsEnabled = false
                     })
                 )
@@ -145,7 +153,7 @@ struct NotificationSettingsView: View {
         }
     }
     
-    // Проверка статуса разрешений на уведомления
+    // Check notification permission status
     private func checkNotificationStatus() {
         isLoading = true
         NotificationManager.shared.checkAuthorizationStatus { status in
@@ -156,7 +164,7 @@ struct NotificationSettingsView: View {
         }
     }
     
-    // Запрос разрешения на уведомления
+    // Request notification permission
     private func requestNotificationPermission() {
         isLoading = true
         NotificationManager.shared.requestAuthorization { granted in
@@ -170,29 +178,29 @@ struct NotificationSettingsView: View {
         }
     }
     
-    // Отправка тестового уведомления
+    // Send a test notification
     private func sendTestNotification() {
         NotificationManager.shared.scheduleLocalNotification(
-            title: "Тестовое уведомление",
-            body: "Это тестовое уведомление для проверки настроек",
+            title: "Test Notification",
+            body: "This is a test notification to verify settings",
             date: Date().addingTimeInterval(5),
             identifier: "test_notification_\(UUID().uuidString)",
             userInfo: ["type": "test"]
         ) { success in
             if success {
-                // Уведомление запланировано
+                // Notification scheduled
             }
         }
     }
     
-    // Открытие настроек приложения
+    // Open app settings
     private func openSettings() {
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
         }
     }
     
-    // Сохранение настроек
+    // Save settings
     private func saveSettings() {
         NotificationManager.shared.updateNotificationSettings(settings)
         dismiss()

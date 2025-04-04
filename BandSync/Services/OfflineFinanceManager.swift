@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import UIKit  // Добавляем импорт UIKit
+import UIKit  // Adding UIKit import
 
 class OfflineFinanceManager {
     static let shared = OfflineFinanceManager()
@@ -16,10 +16,10 @@ class OfflineFinanceManager {
         startSyncTimer()
     }
 
-    // Мониторинг сетевого подключения
+    // Network connection monitoring
     private func setupNetworkMonitoring() {
-        // В реальном приложении здесь будет использоваться Network.framework или Reachability
-        // Для примера просто имитируем работу с сетью
+        // In a real app, Network.framework or Reachability would be used here
+        // For example, we simply simulate network operations
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
                 self?.checkConnection()
@@ -28,22 +28,22 @@ class OfflineFinanceManager {
     }
 
     private func checkConnection() {
-        // В реальном приложении здесь будет проверка подключения
-        // Для примера имитируем работу с сетью
+        // In a real app, connection check would be here
+        // For example, we simply simulate network operations
         isConnected = true
         if isConnected {
             syncPendingUploads()
         }
     }
 
-    // Периодическая синхронизация
+    // Periodic synchronization
     private func startSyncTimer() {
         syncTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.checkConnection()
         }
     }
 
-    // Кэширование записей
+    // Caching records
     func cacheRecord(_ record: FinanceRecord) {
         var cachedRecords = getCachedRecords()
         cachedRecords.append(record)
@@ -53,7 +53,7 @@ class OfflineFinanceManager {
         }
     }
 
-    // Получение кэшированных записей
+    // Getting cached records
     func getCachedRecords() -> [FinanceRecord] {
         if let data = UserDefaults.standard.data(forKey: cacheKey),
            let records = try? JSONDecoder().decode([FinanceRecord].self, from: data) {
@@ -62,7 +62,7 @@ class OfflineFinanceManager {
         return []
     }
 
-    // Добавление записи в очередь на отправку
+    // Add record to upload queue
     func addToPendingUploads(_ record: FinanceRecord) {
         var pendingUploads = getPendingUploads()
         pendingUploads.append(record)
@@ -71,13 +71,13 @@ class OfflineFinanceManager {
             UserDefaults.standard.set(encoded, forKey: pendingUploadsKey)
         }
 
-        // Если есть подключение, пробуем синхронизировать
+        // If connected, try to synchronize
         if isConnected {
             syncPendingUploads()
         }
     }
 
-    // Получение ожидающих отправки записей
+    // Get pending upload records
     func getPendingUploads() -> [FinanceRecord] {
         if let data = UserDefaults.standard.data(forKey: pendingUploadsKey),
            let records = try? JSONDecoder().decode([FinanceRecord].self, from: data) {
@@ -86,12 +86,12 @@ class OfflineFinanceManager {
         return []
     }
 
-    // Безопасная синхронизация записей
+    // Safe record synchronization
     func syncPendingUploads() {
         let pendingUploads = getPendingUploads()
         guard !pendingUploads.isEmpty else { return }
 
-        // Более безопасная обработка записей
+        // Safer record processing
         for record in pendingUploads {
             DispatchQueue.main.async {
                 FinanceService.shared.add(record) { [weak self] success in
@@ -103,7 +103,7 @@ class OfflineFinanceManager {
         }
     }
 
-    // Удаление синхронизированной записи из очереди
+    // Remove synchronized record from queue
     private func removePendingUpload(_ record: FinanceRecord) {
         var pendingUploads = getPendingUploads()
         pendingUploads.removeAll { $0.id == record.id }
@@ -113,16 +113,16 @@ class OfflineFinanceManager {
         }
     }
 
-    // Очистка кэша
+    // Clear cache
     func clearCache() {
         UserDefaults.standard.removeObject(forKey: cacheKey)
     }
 }
 
-// Расширение FinanceService для работы с кэшем
+// FinanceService extension for cache operations
 extension FinanceService {
     func loadCachedRecordsIfNeeded() {
-        // Если записей нет или мало, добавляем кэшированные
+        // If there are no or few records, add cached ones
         if self.records.count < 5 {
             let cachedRecords = OfflineFinanceManager.shared.getCachedRecords()
             if !cachedRecords.isEmpty {

@@ -23,13 +23,13 @@ struct CreateGroupView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Информация о группе")) {
-                    TextField("Название группы", text: $viewModel.groupName)
+                Section(header: Text("Group information")) {
+                    TextField("Group name", text: $viewModel.groupName)
                         .autocapitalization(.words)
                 }
                 
                 Section {
-                    Button("Создать группу") {
+                    Button("Create group") {
                         createGroup()
                     }
                     .disabled(viewModel.groupName.isEmpty || viewModel.isLoading)
@@ -57,10 +57,10 @@ struct CreateGroupView: View {
                     }
                 }
             }
-            .navigationTitle("Создать группу")
+            .navigationTitle("Create group")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
@@ -77,7 +77,7 @@ struct CreateGroupView: View {
                     dismiss()
                 }
             case .failure:
-                // Ошибка уже будет отображена через viewModel.errorMessage
+                // Error will already be displayed through viewModel.errorMessage
                 break
             }
         }

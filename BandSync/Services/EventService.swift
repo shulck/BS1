@@ -3,7 +3,7 @@
 //  BandSync
 //
 //  Created by Oleksandr Kuziakin on 31.03.2025.
-//  Updated by Claude AI on 31.03.2025.
+//  Updated by Claude AI on 03.04.2025.
 //
 
 import Foundation
@@ -23,18 +23,18 @@ final class EventService: ObservableObject {
     private var hasLoadedFromCache = false
     
     init() {
-        // Инициализация мониторинга сети
+        // Initialize network monitoring
         setupNetworkMonitoring()
     }
     
-    // Настройка мониторинга сети
+    // Set up network monitoring
     private func setupNetworkMonitoring() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
                 let isConnected = path.status == .satisfied
                 self?.isOfflineMode = !isConnected
                 
-                // При восстановлении соединения, обновляем данные
+                // When connection is restored, update data
                 if isConnected && self?.hasLoadedFromCache == true {
                     if let groupId = AppState.shared.user?.groupId {
                         self?.fetchEvents(for: groupId)
@@ -51,7 +51,7 @@ final class EventService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             loadFromCache(groupId: groupId)
             return
@@ -66,7 +66,7 @@ final class EventService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка загрузки событий: \(error.localizedDescription)"
+                        self.errorMessage = "Error loading events: \(error.localizedDescription)"
                         self.loadFromCache(groupId: groupId)
                         return
                     }
@@ -75,14 +75,14 @@ final class EventService: ObservableObject {
                         let events = docs.compactMap { try? $0.data(as: Event.self) }
                         self.events = events
                         
-                        // Сохраняем в кэш
+                        // Save to cache
                         CacheService.shared.cacheEvents(events, forGroupId: groupId)
                     }
                 }
             }
     }
     
-    // Загрузка из кэша
+    // Load from cache
     private func loadFromCache(groupId: String) {
         if let cachedEvents = CacheService.shared.getCachedEvents(forGroupId: groupId) {
             self.events = cachedEvents
@@ -102,7 +102,7 @@ final class EventService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             errorMessage = "Cannot add events in offline mode"
             isLoading = false
@@ -118,13 +118,13 @@ final class EventService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка добавления события: \(error.localizedDescription)"
+                        self.errorMessage = "Error adding event: \(error.localizedDescription)"
                         completion(false)
                     } else {
-                        // Обновляем локальные данные
+                        // Update local data
                         self.fetchEvents(for: event.groupId)
                         
-                        // Планируем уведомления
+                        // Schedule notifications
                         NotificationManager.shared.scheduleEventNotification(event: event)
                         
                         completion(true)
@@ -134,7 +134,7 @@ final class EventService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации события: \(error)"
+                self.errorMessage = "Event serialization error: \(error)"
                 completion(false)
             }
         }
@@ -149,7 +149,7 @@ final class EventService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             errorMessage = "Cannot update events in offline mode"
             isLoading = false
@@ -165,17 +165,17 @@ final class EventService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка обновления события: \(error.localizedDescription)"
+                        self.errorMessage = "Error updating event: \(error.localizedDescription)"
                         completion(false)
                     } else {
-                        // Обновляем локальные данные
+                        // Update local data
                         self.fetchEvents(for: event.groupId)
                         
-                        // Обновляем уведомления
-                        // Сначала отменяем старые
+                        // Update notifications
+                        // First cancel old ones
                         NotificationManager.shared.cancelNotification(withIdentifier: "event_day_before_\(id)")
                         NotificationManager.shared.cancelNotification(withIdentifier: "event_hour_before_\(id)")
-                        // Затем планируем новые
+                        // Then schedule new ones
                         NotificationManager.shared.scheduleEventNotification(event: event)
                         
                         completion(true)
@@ -185,69 +185,93 @@ final class EventService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации события: \(error)"
+                self.errorMessage = "Event serialization error: \(error)"
                 completion(false)
             }
         }
     }
 
     func deleteEvent(_ event: Event) {
-        guard let id = event.id else { return }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        // Проверяем соединение с сетью
-        if isOfflineMode {
-            errorMessage = "Cannot delete events in offline mode"
-            isLoading = false
-            return
-        }
-        
-        db.collection("events").document(id).delete { [weak self] error in
-            guard let self = self else { return }
+            guard let id = event.id else { return }
             
-            DispatchQueue.main.async {
-                self.isLoading = false
+            isLoading = true
+            errorMessage = nil
+            
+            // Check network connection
+            if isOfflineMode {
+                errorMessage = "Cannot delete events in offline mode"
+                isLoading = false
+                return
+            }
+            
+            db.collection("events").document(id).delete { [weak self] error in
+                guard let self = self else { return }
                 
-                if let error = error {
-                    self.errorMessage = "Ошибка удаления: \(error.localizedDescription)"
-                } else if let groupId = AppState.shared.user?.groupId {
-                    // Обновляем локальные данные
-                    self.fetchEvents(for: groupId)
+                DispatchQueue.main.async {
+                    self.isLoading = false
                     
-                    // Отменяем уведомления
-                    NotificationManager.shared.cancelNotification(withIdentifier: "event_day_before_\(id)")
-                    NotificationManager.shared.cancelNotification(withIdentifier: "event_hour_before_\(id)")
+                    if let error = error {
+                        self.errorMessage = "Error deleting: \(error.localizedDescription)"
+                    } else if let groupId = AppState.shared.user?.groupId {
+                        // Update local data
+                        self.fetchEvents(for: groupId)
+                        
+                        // Cancel notifications
+                        NotificationManager.shared.cancelNotification(withIdentifier: "event_day_before_\(id)")
+                        NotificationManager.shared.cancelNotification(withIdentifier: "event_hour_before_\(id)")
+                    }
                 }
             }
         }
-    }
-    
-    // Получение событий, отфильтрованных по дате
-    func eventsForDate(_ date: Date) -> [Event] {
-        return events.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
+        
+        // Get events filtered by date
+        func eventsForDate(_ date: Date) -> [Event] {
+            return events.filter {
+                Calendar.current.isDate($0.date, inSameDayAs: date)
+            }
+        }
+        
+        // Get upcoming events
+        func upcomingEvents(limit: Int = 5) -> [Event] {
+            let now = Date()
+            return events
+                .filter { $0.date > now }
+                .sorted { $0.date < $1.date }
+                .prefix(limit)
+                .map { $0 }
+        }
+        
+        // Get events by type
+        func eventsByType(_ type: EventType) -> [Event] {
+            return events.filter { $0.type == type }
+        }
+        
+        // Get events for a specific period
+        func events(from startDate: Date, to endDate: Date) -> [Event] {
+            return events.filter {
+                $0.date >= startDate && $0.date <= endDate
+            }
+        }
+        
+        // Get events for a specific month and year
+        func eventsForMonth(month: Int, year: Int) -> [Event] {
+            let calendar = Calendar.current
+            
+            guard let startDate = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+                  let endDate = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startDate) else {
+                return []
+            }
+            
+            return events(from: startDate, to: endDate)
+        }
+        
+        // Clear all data
+        func clearAllData() {
+            events = []
+            errorMessage = nil
+        }
+        
+        deinit {
+            networkMonitor.cancel()
         }
     }
-    
-    // Получение предстоящих событий
-    func upcomingEvents(limit: Int = 5) -> [Event] {
-        let now = Date()
-        return events
-            .filter { $0.date > now }
-            .sorted { $0.date < $1.date }
-            .prefix(limit)
-            .map { $0 }
-    }
-    
-    // Очистить все данные
-    func clearAllData() {
-        events = []
-        errorMessage = nil
-    }
-    
-    deinit {
-        networkMonitor.cancel()
-    }
-}

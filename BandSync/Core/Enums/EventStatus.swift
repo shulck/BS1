@@ -16,8 +16,8 @@
 import Foundation
 
 enum EventStatus: String, Codable, CaseIterable, Identifiable {
-    case booked = "Забронировано"
-    case confirmed = "Подтверждено"
+    case booked = "Booked"
+    case confirmed = "Confirmed"
 
     var id: String { rawValue }
 }

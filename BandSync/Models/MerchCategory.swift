@@ -4,12 +4,12 @@ import FirebaseFirestore
 enum MerchCategory: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 
-    case clothing = "Одежда"
-    case music = "Музыка"
-    case accessory = "Аксессуары"
-    case other = "Другое"
+    case clothing = "Clothing"
+    case music = "Music"
+    case accessory = "Accessories"
+    case other = "Other"
 
-    // Добавляем свойство icon
+    // Adding icon property
     var icon: String {
         switch self {
         case .clothing: return "tshirt"
@@ -35,20 +35,20 @@ struct MerchSizeStock: Codable {
         self.XXL = XXL
     }
 
-    // Общее количество
+    // Total quantity
     var total: Int {
         return S + M + L + XL + XXL
     }
 
-    // Проверка на низкие остатки - изменена логика согласно требованию
+    // Check for low stock - logic changed according to requirement
     func hasLowStock(threshold: Int) -> Bool {
-        // Для товаров с общим количеством меньше 50, используем обычный порог
+        // For items with total quantity less than 50, use regular threshold
         if total < 50 {
-            // Для одежды проверяем каждый размер
+            // For clothing, check each size
             return S <= threshold || M <= threshold || L <= threshold || XL <= threshold || XXL <= threshold
         } else {
-            // Для товаров с общим количеством больше или равным 50, считаем низкий запас,
-            // если общее количество не превышает 50
+            // For items with total quantity greater than or equal to 50, 
+            // consider low stock if total does not exceed 50
             return false
         }
     }
@@ -70,17 +70,17 @@ struct MerchItem: Identifiable, Codable {
     var updatedAt: Date = Date()
     var createdAt: Date = Date()
 
-    // Вычисляемые свойства
+    // Computed properties
     var totalStock: Int {
         return stock.total
     }
 
     var hasLowStock: Bool {
-        // Если общее количество >= 50, всегда считаем запас достаточным
+        // If total quantity >= 50, always consider stock sufficient
         if totalStock >= 10 {
             return false
         }
-        // Иначе проверяем по обычной логике
+        // Otherwise check using regular logic
         return stock.hasLowStock(threshold: lowStockThreshold)
     }
 }

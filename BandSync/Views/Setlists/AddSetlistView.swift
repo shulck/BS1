@@ -27,23 +27,23 @@ struct AddSetlistView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Информация")) {
-                    TextField("Название сетлиста", text: $name)
+                Section(header: Text("Information")) {
+                    TextField("Setlist name", text: $name)
                 }
 
-                Section(header: Text("Добавить песню")) {
-                    TextField("Название", text: $newTitle)
+                Section(header: Text("Add song")) {
+                    TextField("Title", text: $newTitle)
                     HStack {
-                        TextField("Мин", text: $minutes)
+                        TextField("Min", text: $minutes)
                             .keyboardType(.numberPad)
                         Text(":")
-                        TextField("Сек", text: $seconds)
+                        TextField("Sec", text: $seconds)
                             .keyboardType(.numberPad)
                     }
                     TextField("BPM", text: $bpm)
                         .keyboardType(.numberPad)
 
-                    Button("Добавить") {
+                    Button("Add") {
                         guard let min = Int(minutes), let sec = Int(seconds), let bpmVal = Int(bpm), !newTitle.isEmpty else { return }
                         let song = Song(title: newTitle, durationMinutes: min, durationSeconds: sec, bpm: bpmVal)
                         songs.append(song)
@@ -54,7 +54,7 @@ struct AddSetlistView: View {
                     }
                 }
 
-                Section(header: Text("Песни")) {
+                Section(header: Text("Songs")) {
                     ForEach(songs) { song in
                         HStack {
                             Text(song.title)
@@ -69,7 +69,7 @@ struct AddSetlistView: View {
 
                 Section {
                     HStack {
-                        Text("Общая длительность")
+                        Text("Total duration")
                         Spacer()
                         Text(formattedTotalDuration)
                             .bold()
@@ -77,10 +77,10 @@ struct AddSetlistView: View {
                 }
             }
 
-            .navigationTitle("Создать сетлист")
+            .navigationTitle("Create Setlist")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         guard let uid = AppState.shared.user?.id,
                               let groupId = AppState.shared.user?.groupId,
                               !name.isEmpty
@@ -103,7 +103,7 @@ struct AddSetlistView: View {
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }

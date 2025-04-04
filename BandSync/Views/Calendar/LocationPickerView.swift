@@ -17,7 +17,7 @@ struct LocationPickerView: View {
     @State private var searchText = ""
     @State private var searchResults: [LocationDetails] = []
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 50.450001, longitude: 30.523333), // Киев
+        center: CLLocationCoordinate2D(latitude: 50.450001, longitude: 30.523333), // Kyiv
         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
     )
     @State private var isSearching = false
@@ -27,9 +27,9 @@ struct LocationPickerView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Поисковое поле
+            // Search field
             HStack {
-                TextField("Поиск места", text: $searchText)
+                TextField("Search location", text: $searchText)
                     .padding(8)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
@@ -37,18 +37,18 @@ struct LocationPickerView: View {
                         searchPublisher.send(newValue)
                     }
                 
-                Button("Отмена") {
+                Button("Cancel") {
                     dismiss()
                 }
             }
             .padding()
             
             if isSearching {
-                // Индикатор загрузки
+                // Loading indicator
                 ProgressView()
                     .padding()
             } else if !searchResults.isEmpty && !searchText.isEmpty {
-                // Результаты поиска
+                // Search results
                 List {
                     ForEach(searchResults) { location in
                         Button {
@@ -67,23 +67,25 @@ struct LocationPickerView: View {
                 }
                 .listStyle(PlainListStyle())
             } else {
-                // Карта для выбора места
-                EventMapView(
-                    region: $region,
-                    annotations: mapAnnotations(),
-                    onLocationSelected: { coordinate in
-                        selectCoordinate(coordinate)
-                    },
-                    allowSelection: true
+                // Map for location selection
+                Map(coordinateRegion: $region, annotationItems: selectedLocation != nil ? [selectedLocation!] : []) { location in
+                    MapMarker(coordinate: location.coordinate, tint: .red)
+                }
+                .gesture(
+                    TapGesture()
+                        .onEnded { _ in
+                            // Use center of visible region for location selection
+                            selectCoordinate(region.center)
+                        }
                 )
             }
         }
-        .navigationTitle("Выбор места")
+        .navigationTitle("Select location")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             setupSearchPublisher()
             
-            // Запрашиваем текущее местоположение пользователя
+            // Request current user location
             LocationManager.shared.requestLocation { location in
                 if let location = location {
                     region = MKCoordinateRegion(
@@ -95,7 +97,7 @@ struct LocationPickerView: View {
         }
     }
     
-    // Настройка издателя для поиска с задержкой
+    // Setup publisher for search with delay
     private func setupSearchPublisher() {
         searchPublisher
             .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
@@ -107,7 +109,7 @@ struct LocationPickerView: View {
             .store(in: &cancellables)
     }
     
-    // Поиск мест по запросу
+    // Search locations by query
     private func searchLocations(query: String) {
         isSearching = true
         searchResults = []
@@ -127,7 +129,7 @@ struct LocationPickerView: View {
             searchResults = response.mapItems.map { item in
                 LocationDetails(
                     id: UUID().uuidString,
-                    name: item.name ?? "Неизвестное место",
+                    name: item.name ?? "Unknown location",
                     address: formatAddress(from: item.placemark),
                     coordinate: item.placemark.coordinate
                 )
@@ -135,15 +137,15 @@ struct LocationPickerView: View {
         }
     }
     
-    // Выбор места из результатов поиска
+    // Select location from search results
     private func selectLocation(_ location: LocationDetails) {
         selectedLocation = location
         dismiss()
     }
     
-    // Выбор координат на карте
+    // Select coordinates on map
     private func selectCoordinate(_ coordinate: CLLocationCoordinate2D) {
-        // Получаем информацию о месте по координатам
+        // Get location information by coordinates
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(location) { placemarks, error in
             guard let placemark = placemarks?.first, error == nil else {
@@ -152,7 +154,7 @@ struct LocationPickerView: View {
             
             let locationDetails = LocationDetails(
                 id: UUID().uuidString,
-                name: placemark.name ?? "Выбранное место",
+                name: placemark.name ?? "Selected location",
                 address: formatAddress(from: placemark),
                 coordinate: coordinate
             )
@@ -162,25 +164,21 @@ struct LocationPickerView: View {
         }
     }
     
-    // Преобразование аннотаций для карты
-    private func mapAnnotations() -> [MapAnnotation] {
-        var annotations: [MapAnnotation] = []
+    // Add function to open route in maps
+    private func openMapsWithDirections(to coordinate: CLLocationCoordinate2D, name: String) {
+        // Option 1: Apple Maps
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+        mapItem.name = name
+        mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
         
-        // Добавляем текущее выбранное место, если есть
-        if let location = selectedLocation {
-            annotations.append(MapAnnotation(
-                title: location.name,
-                subtitle: location.address,
-                coordinate: location.coordinate,
-                type: .custom,
-                date: nil
-            ))
+        // Option 2: Google Maps (if installed)
+        let googleUrlString = "comgooglemaps://?daddr=\(coordinate.latitude),\(coordinate.longitude)&directionsmode=driving"
+        if let googleUrl = URL(string: googleUrlString), UIApplication.shared.canOpenURL(googleUrl) {
+            UIApplication.shared.open(googleUrl)
         }
-        
-        return annotations
     }
     
-    // Форматирование адреса из метки места
+    // Format address from placemark
     private func formatAddress(from placemark: CLPlacemark) -> String {
         var address = ""
         
@@ -189,42 +187,42 @@ struct LocationPickerView: View {
         }
         
         if let subThoroughfare = placemark.subThoroughfare {
-            if !address.isEmpty {
+            if (!address.isEmpty) {
                 address += " "
             }
             address += subThoroughfare
         }
         
         if let locality = placemark.locality {
-            if !address.isEmpty {
+            if (!address.isEmpty) {
                 address += ", "
             }
             address += locality
         }
         
         if let administrativeArea = placemark.administrativeArea {
-            if !address.isEmpty {
+            if (!address.isEmpty) {
                 address += ", "
             }
             address += administrativeArea
         }
         
         if let country = placemark.country {
-            if !address.isEmpty {
+            if (!address.isEmpty) {
                 address += ", "
             }
             address += country
         }
         
-        if address.isEmpty {
-            address = "Неизвестный адрес"
+        if (address.isEmpty) {
+            address = "Unknown address"
         }
         
         return address
     }
 }
 
-// Модель для деталей местоположения
+// Model for location details
 struct LocationDetails: Identifiable, Codable, Equatable {
     var id: String
     var name: String

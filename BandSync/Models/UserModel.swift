@@ -17,7 +17,7 @@ struct UserModel: Identifiable, Codable, Equatable {
         var id: String { rawValue }
     }
     
-    // Реализация Equatable
+    // Implementation of Equatable
     static func == (lhs: UserModel, rhs: UserModel) -> Bool {
         return lhs.id == rhs.id &&
                lhs.email == rhs.email &&

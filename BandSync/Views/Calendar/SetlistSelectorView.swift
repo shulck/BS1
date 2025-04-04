@@ -23,13 +23,13 @@ struct SetlistSelectorView: View {
     var body: some View {
         NavigationView {
             List {
-                // Опция "Нет сетлиста"
+                // No setlist option
                 Button {
                     selectedSetlistId = nil
                     dismiss()
                 } label: {
                     HStack {
-                        Text("Нет сетлиста")
+                        Text("No setlist")
                             .foregroundColor(.primary)
                         Spacer()
                         if selectedSetlistId == nil {
@@ -39,7 +39,7 @@ struct SetlistSelectorView: View {
                     }
                 }
                 
-                // Список всех доступных сетлистов
+                // List of all available setlists
                 ForEach(setlistService.setlists) { setlist in
                     Button {
                         selectedSetlistId = setlist.id
@@ -50,7 +50,7 @@ struct SetlistSelectorView: View {
                                 Text(setlist.name)
                                     .foregroundColor(.primary)
                                 
-                                Text("\(setlist.songs.count) песен • \(setlist.formattedTotalDuration)")
+                                Text("\(setlist.songs.count) songs • \(setlist.formattedTotalDuration)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -66,16 +66,16 @@ struct SetlistSelectorView: View {
                 }
                 
                 if setlistService.setlists.isEmpty {
-                    Text("Нет доступных сетлистов")
+                    Text("No available setlists")
                         .foregroundColor(.gray)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding()
                 }
             }
-            .navigationTitle("Выбор сетлиста")
+            .navigationTitle("Select setlist")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }

@@ -27,10 +27,10 @@ struct GroupSelectionView: View {
                 .frame(width: 80, height: 80)
                 .padding()
             
-            Text("Добро пожаловать в BandSync!")
+            Text("Welcome to BandSync!")
                 .font(.title.bold())
             
-            Text("Чтобы начать, создайте новую группу или присоединитесь к существующей")
+            Text("To get started, create a new group or join an existing one")
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -41,7 +41,7 @@ struct GroupSelectionView: View {
                 }) {
                     HStack {
                         Image(systemName: "plus.circle")
-                        Text("Создать новую группу")
+                        Text("Create new group")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -55,7 +55,7 @@ struct GroupSelectionView: View {
                 }) {
                     HStack {
                         Image(systemName: "person.badge.plus")
-                        Text("Присоединиться к группе")
+                        Text("Join a group")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -68,7 +68,7 @@ struct GroupSelectionView: View {
             
             Spacer()
             
-            Button("Выйти") {
+            Button("Log out") {
                 appState.logout()
             }
             .padding(.bottom, 20)

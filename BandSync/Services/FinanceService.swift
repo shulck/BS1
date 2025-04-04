@@ -27,7 +27,7 @@ final class FinanceService: ObservableObject {
                         self?.records = items
                     }
                 } else {
-                    print("Ошибка загрузки финансов: \(error?.localizedDescription ?? "неизвестно")")
+                    print("Error loading finances: \(error?.localizedDescription ?? "unknown")")
                 }
             }
     }
@@ -36,7 +36,7 @@ final class FinanceService: ObservableObject {
         do {
             _ = try db.collection("finances").addDocument(from: record) { error in
                 if let error = error {
-                    print("Ошибка добавления: \(error.localizedDescription)")
+                    print("Error adding: \(error.localizedDescription)")
                     completion(false)
                 } else {
                     self.fetch(for: record.groupId)
@@ -44,7 +44,7 @@ final class FinanceService: ObservableObject {
                 }
             }
         } catch {
-            print("Ошибка сериализации: \(error)")
+            print("Serialization error: \(error)")
             completion(false)
         }
     }
@@ -53,7 +53,7 @@ final class FinanceService: ObservableObject {
         guard !record.id.isEmpty else { return }
         db.collection("finances").document(record.id).delete { error in
             if let error = error {
-                print("Ошибка удаления: \(error.localizedDescription)")
+                print("Error deleting: \(error.localizedDescription)")
             } else if let groupId = AppState.shared.user?.groupId {
                 self.fetch(for: groupId)
             }

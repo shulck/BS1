@@ -37,12 +37,12 @@ struct ChatsView: View {
                     }
                 }
             }
-            .navigationTitle("Чаты")
+            .navigationTitle("Chats")
             .toolbar {
                 Button {
                     showNewChat = true
                 } label: {
-                    Label("Новый чат", systemImage: "plus.bubble")
+                    Label("New chat", systemImage: "plus.bubble")
                 }
             }
             .onAppear {

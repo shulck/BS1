@@ -44,19 +44,19 @@ struct ChatDetailView: View {
                                 }
 
                                 HStack {
-                                    Button("Ответить") {
+                                    Button("Reply") {
                                         replyTo = message
                                     }
                                     .font(.caption2)
                                     .foregroundColor(.blue)
 
                                     if message.senderId == AppState.shared.user?.id {
-                                        Button("Редактировать") {
+                                        Button("Edit") {
                                             messageText = message.text
                                         }
                                         .font(.caption2)
 
-                                        Button("Удалить") {
+                                        Button("Delete") {
                                             chatService.deleteMessage(message)
                                         }
                                         .font(.caption2)
@@ -79,10 +79,10 @@ struct ChatDetailView: View {
             Divider()
 
             HStack {
-                TextField("Сообщение", text: $messageText)
+                TextField("Message", text: $messageText)
                     .textFieldStyle(.roundedBorder)
 
-                Button("Отправить") {
+                Button("Send") {
                     send()
                 }
                 .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty)

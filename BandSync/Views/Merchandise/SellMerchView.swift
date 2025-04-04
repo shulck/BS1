@@ -20,19 +20,19 @@ struct SellMerchView: View {
         NavigationView {
             Form {
                 if item.category == .clothing {
-                    Picker("Размер", selection: $size) {
+                    Picker("Size", selection: $size) {
                         ForEach(["S", "M", "L", "XL", "XXL"], id: \.self) { size in
                             Text(size)
                         }
                     }
                 } else {
-                    // Для других категорий размер не выбираем, используем фиктивное значение
+                    // For other categories we don't select size, using a dummy value
                     let _ = { size = "one_size" }()
                 }
 
-                Stepper("Количество: \(quantity)", value: $quantity, in: 1...999)
+                Stepper("Quantity: \(quantity)", value: $quantity, in: 1...999)
 
-                Toggle("Это подарок", isOn: $isGift)
+                Toggle("This is a gift", isOn: $isGift)
                     .onChange(of: isGift) { newValue in
                         if newValue {
                             channel = .gift
@@ -42,7 +42,7 @@ struct SellMerchView: View {
                     }
 
                 if !isGift {
-                    Picker("Канал продаж", selection: $channel) {
+                    Picker("Sales channel", selection: $channel) {
                         ForEach(MerchSaleChannel.allCases.filter { $0 != .gift }) {
                             Text($0.rawValue).tag($0)
                         }
@@ -50,11 +50,11 @@ struct SellMerchView: View {
                 }
             }
 
-            .navigationTitle(isGift ? "Подарить товар" : "Продажа")
+            .navigationTitle(isGift ? "Gift item" : "Sale")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isGift ? "Подарить" : "Подтвердить") {
-                        // При подарке принудительно устанавливаем канал gift
+                    Button(isGift ? "Gift" : "Confirm") {
+                        // When gifting, forcibly set the channel to gift
                         let finalChannel = isGift ? MerchSaleChannel.gift : channel
                         MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: finalChannel)
                         dismiss()
@@ -62,7 +62,7 @@ struct SellMerchView: View {
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }

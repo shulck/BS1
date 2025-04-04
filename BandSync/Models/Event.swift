@@ -1,3 +1,10 @@
+//
+//  Event.swift
+//  BandSync
+//
+//  Created by Oleksandr Kuziakin on 31.03.2025.
+//
+
 import Foundation
 import FirebaseFirestore
 
@@ -19,9 +26,9 @@ struct Event: Identifiable, Codable {
     var coordinatorPhone: String?
     
     var hotelName: String?
+    var hotelAddress: String? // New field for hotel address
     var hotelCheckIn: Date?
     var hotelCheckOut: Date?
-    var hotelAddress: String? // Добавлено новое поле для адреса отеля
     
     var fee: Double?
     var currency: String?

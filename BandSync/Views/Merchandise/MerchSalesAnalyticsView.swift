@@ -23,13 +23,13 @@ struct MerchSalesAnalyticsView: View {
     @State private var showingItemDetail = false
     @State private var selectedItemId: String? = nil
 
-    // Временные рамки для анализа
+    // Time frames for analysis
     enum TimeFrame: String, CaseIterable, Identifiable {
-        case week = "Неделя"
-        case month = "Месяц"
-        case quarter = "Квартал"
-        case year = "Год"
-        case all = "Все время"
+        case week = "Week"
+        case month = "Month"
+        case quarter = "Quarter"
+        case year = "Year"
+        case all = "All time"
 
         var id: String { self.rawValue }
 
@@ -39,12 +39,12 @@ struct MerchSalesAnalyticsView: View {
             case .month: return 30
             case .quarter: return 90
             case .year: return 365
-            case .all: return 3650 // ~10 лет
+            case .all: return 3650 // ~10 years
             }
         }
     }
 
-    // Данные для графиков
+    // Data for charts
     struct SalesChartPoint {
         var date: Date
         var amount: Int
@@ -58,9 +58,9 @@ struct MerchSalesAnalyticsView: View {
     var body: some View {
         NavigationView {
             List {
-                // Фильтры
+                // Filters
                 Section {
-                    Picker("Период", selection: $selectedTimeFrame) {
+                    Picker("Period", selection: $selectedTimeFrame) {
                         ForEach(TimeFrame.allCases) { timeFrame in
                             Text(timeFrame.rawValue).tag(timeFrame)
                         }
@@ -68,7 +68,7 @@ struct MerchSalesAnalyticsView: View {
                     .pickerStyle(SegmentedPickerStyle())
 
                     Menu {
-                        Button("Все категории") {
+                        Button("All categories") {
                             selectedCategoryFilter = nil
                         }
 
@@ -79,18 +79,18 @@ struct MerchSalesAnalyticsView: View {
                         }
                     } label: {
                         HStack {
-                            Text("Категория: \(selectedCategoryFilter?.rawValue ?? "Все")")
+                            Text("Category: \(selectedCategoryFilter?.rawValue ?? "All")")
                             Spacer()
                             Image(systemName: "chevron.down")
                         }
                     }
                 }
 
-                // Сводка продаж
-                Section(header: Text("Сводка продаж")) {
+                // Sales summary
+                Section(header: Text("Sales summary")) {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Общая выручка")
+                            Text("Total revenue")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(totalRevenue(), specifier: "%.0f") EUR")
@@ -101,7 +101,7 @@ struct MerchSalesAnalyticsView: View {
                         Spacer()
 
                         VStack(alignment: .trailing) {
-                            Text("Проданных единиц")
+                            Text("Units sold")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(totalSoldItems())")
@@ -111,38 +111,38 @@ struct MerchSalesAnalyticsView: View {
                     }
                     .padding(.vertical, 5)
 
-                    // График продаж
+                    // Sales chart
                     VStack(alignment: .leading) {
-                        Text("Динамика продаж")
+                        Text("Sales dynamics")
                             .font(.caption)
                             .foregroundColor(.gray)
 
                         if #available(iOS 16.0, *) {
                             Chart(salesChartData(), id: \.date) { item in
                                 LineMark(
-                                    x: .value("Дата", item.date),
-                                    y: .value("Продажи", item.amount)
+                                    x: .value("Date", item.date),
+                                    y: .value("Sales", item.amount)
                                 )
                                 .foregroundStyle(.blue)
 
                                 PointMark(
-                                    x: .value("Дата", item.date),
-                                    y: .value("Продажи", item.amount)
+                                    x: .value("Date", item.date),
+                                    y: .value("Sales", item.amount)
                                 )
                                 .foregroundStyle(.blue)
                             }
                             .frame(height: 200)
                             .padding(.top, 8)
                         } else {
-                            Text("График доступен в iOS 16 и выше")
+                            Text("Chart available in iOS 16 and above")
                                 .foregroundColor(.gray)
                                 .padding()
                         }
                     }
                 }
 
-                // Топ товаров
-                Section(header: Text("Топ товаров")) {
+                // Top items
+                Section(header: Text("Top items")) {
                     ForEach(topSellingItems()) { item in
                         Button {
                             selectedItemId = item.id
@@ -175,7 +175,7 @@ struct MerchSalesAnalyticsView: View {
                                         .font(.headline)
                                         .foregroundColor(.primary)
 
-                                    Text("Продано: \(itemSalesCount(for: item.id ?? ""))")
+                                    Text("Sold: \(itemSalesCount(for: item.id ?? ""))")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -190,17 +190,17 @@ struct MerchSalesAnalyticsView: View {
                     }
                 }
 
-                // Анализ по категориям
-                Section(header: Text("Продажи по категориям")) {
+                // Analysis by category
+                Section(header: Text("Sales by category")) {
                     if #available(iOS 16.0, *) {
                         Chart(categorySalesData(), id: \.category) { item in
                             SectorMark(
-                                angle: .value("Продажи", item.sales),
+                                angle: .value("Sales", item.sales),
                                 innerRadius: .ratio(0.5),
                                 angularInset: 1.5
                             )
                             .cornerRadius(5)
-                            .foregroundStyle(by: .value("Категория", item.category))
+                            .foregroundStyle(by: .value("Category", item.category))
                         }
                         .frame(height: 200)
                         .padding(.vertical)
@@ -210,17 +210,17 @@ struct MerchSalesAnalyticsView: View {
                         HStack {
                             Text(item.category)
                             Spacer()
-                            Text("\(item.sales) шт.")
+                            Text("\(item.sales) pcs.")
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
 
-                // Статистика запасов
-                Section(header: Text("Запасы")) {
+                // Stock statistics
+                Section(header: Text("Stock")) {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Всего в наличии")
+                            Text("Total in stock")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(totalStockCount())")
@@ -231,7 +231,7 @@ struct MerchSalesAnalyticsView: View {
                         Spacer()
 
                         VStack(alignment: .trailing) {
-                            Text("Товаров с низким запасом")
+                            Text("Items with low stock")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(lowStockItemsCount())")
@@ -243,7 +243,7 @@ struct MerchSalesAnalyticsView: View {
                     .padding(.vertical, 5)
                 }
             }
-            .navigationTitle("Аналитика продаж")
+            .navigationTitle("Sales Analytics")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 loadData()
@@ -259,7 +259,7 @@ struct MerchSalesAnalyticsView: View {
         }
     }
 
-    // MARK: - Функции для получения данных
+    // MARK: - Functions for getting data
 
     private func loadData() {
         if let groupId = AppState.shared.user?.groupId {
@@ -309,7 +309,7 @@ struct MerchSalesAnalyticsView: View {
         let sales = filteredSalesByTimeFrame()
         let calendar = Calendar.current
 
-        // Сгруппируем продажи по дням
+        // Group sales by days
         var salesByDay: [Date: Int] = [:]
 
         for sale in sales {
@@ -317,10 +317,10 @@ struct MerchSalesAnalyticsView: View {
             salesByDay[day, default: 0] += sale.quantity
         }
 
-        // Создаем массив точек для графика
+        // Create array of points for chart
         var chartData: [SalesChartPoint] = []
 
-        // Определяем интервал дат для графика
+        // Determine date range for chart
         let endDate = Date()
         let startDate: Date
 
@@ -328,7 +328,7 @@ struct MerchSalesAnalyticsView: View {
         case .week:
             startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
 
-            // Для недели показываем каждый день
+            // For week show each day
             var current = startDate
             while current <= endDate {
                 let sales = salesByDay[calendar.startOfDay(for: current)] ?? 0
@@ -339,7 +339,7 @@ struct MerchSalesAnalyticsView: View {
         case .month:
             startDate = calendar.date(byAdding: .day, value: -30, to: endDate) ?? endDate
 
-            // Для месяца группируем по неделям
+            // For month group by weeks
             var current = startDate
             while current <= endDate {
                 let weekStart = calendar.startOfDay(for: current)
@@ -356,7 +356,7 @@ struct MerchSalesAnalyticsView: View {
         case .quarter, .year, .all:
             startDate = calendar.date(byAdding: .day, value: -selectedTimeFrame.days, to: endDate) ?? endDate
 
-            // Для квартала и года группируем по месяцам
+            // For quarter and year group by months
             var current = startDate
             while current <= endDate {
                 let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: current)) ?? current
@@ -377,16 +377,16 @@ struct MerchSalesAnalyticsView: View {
     }
 
     private func topSellingItems() -> [MerchItem] {
-        // Получаем продажи отфильтрованные по времени
+        // Get sales filtered by time
         let sales = filteredSalesByTimeFrame()
 
-        // Считаем количество продаж для каждого товара
+        // Count sales for each item
         var salesByItem: [String: Int] = [:]
         for sale in sales {
             salesByItem[sale.itemId, default: 0] += sale.quantity
         }
 
-        // Получаем товары и сортируем их по количеству продаж
+        // Get items and sort them by sales count
         let items = merchService.items.filter { item in
             if let itemId = item.id {
                 return salesByItem[itemId] != nil
@@ -398,7 +398,7 @@ struct MerchSalesAnalyticsView: View {
             return sales1 > sales2
         }
 
-        // Возвращаем топ-5 товаров или меньше, если их недостаточно
+        // Return top 5 items or less if not enough
         return Array(items.prefix(5))
     }
 
@@ -442,7 +442,7 @@ struct MerchSalesAnalyticsView: View {
     }
 }
 
-// MARK: - Представление для детального анализа товара
+// MARK: - View for detailed item analysis
 
 struct MerchItemAnalyticsView: View {
     let item: MerchItem
@@ -452,7 +452,7 @@ struct MerchItemAnalyticsView: View {
     var body: some View {
         NavigationView {
             List {
-                // Основная информация о товаре
+                // Basic item information
                 Section {
                     HStack(alignment: .top, spacing: 15) {
                         if let firstImageUrl = item.imageUrls?.first,
@@ -487,12 +487,12 @@ struct MerchItemAnalyticsView: View {
 
                                 Text("•")
 
-                                // Исправляем обращение к опциональному свойству
+                                // Fix reference to optional property
                                 if let subcategory = item.subcategory {
                                     Label(subcategory.rawValue, systemImage: subcategory.icon)
                                         .font(.caption)
                                 } else {
-                                    Text("Без подкатегории")
+                                    Text("No subcategory")
                                         .font(.caption)
                                 }
                             }
@@ -506,11 +506,11 @@ struct MerchItemAnalyticsView: View {
                     .padding(.vertical, 5)
                 }
 
-                // Статистика продаж
-                Section(header: Text("Статистика продаж")) {
+                // Sales statistics
+                Section(header: Text("Sales statistics")) {
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Всего продано")
+                            Text("Total sold")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(totalSoldQuantity())")
@@ -521,7 +521,7 @@ struct MerchItemAnalyticsView: View {
                         Spacer()
 
                         VStack(alignment: .trailing) {
-                            Text("Выручено")
+                            Text("Revenue")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             Text("\(totalRevenue(), specifier: "%.0f") EUR")
@@ -531,24 +531,24 @@ struct MerchItemAnalyticsView: View {
                     }
                     .padding(.vertical, 5)
 
-                    // Разбивка по каналам продаж
+                    // Sales by channel
                     ForEach(salesByChannel(), id: \.channel) { channelData in
                         HStack {
                             Text(channelData.channel)
                             Spacer()
-                            Text("\(channelData.quantity) шт. (\(channelData.percentage, specifier: "%.1f")%)")
+                            Text("\(channelData.quantity) pcs. (\(channelData.percentage, specifier: "%.1f")%)")
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
 
-                // Текущие запасы
-                Section(header: Text("Текущие запасы")) {
+                // Current stock
+                Section(header: Text("Current stock")) {
                     ProgressView(value: Double(item.totalStock), total: Double(item.totalStock + totalSoldQuantity())) {
                         HStack {
-                            Text("Осталось: \(item.totalStock) шт.")
+                            Text("Left: \(item.totalStock) pcs.")
                             Spacer()
-                            Text("Продано: \(totalSoldQuantity()) шт.")
+                            Text("Sold: \(totalSoldQuantity()) pcs.")
                         }
                         .font(.caption)
                     }
@@ -556,10 +556,10 @@ struct MerchItemAnalyticsView: View {
                     .padding(.vertical, 5)
 
                     HStack {
-                        Text("Размер")
+                        Text("Size")
                             .bold()
                         Spacer()
-                        Text("Запас")
+                        Text("Stock")
                             .bold()
                     }
                     .padding(.top, 5)
@@ -574,39 +574,39 @@ struct MerchItemAnalyticsView: View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.orange)
-                            Text("Низкий запас! Порог: \(item.lowStockThreshold) шт.")
+                            Text("Low stock! Threshold: \(item.lowStockThreshold) pcs.")
                                 .foregroundColor(.orange)
                         }
                         .padding(.top, 5)
                     }
                 }
 
-                // Рекомендации
-                Section(header: Text("Рекомендации")) {
+                // Recommendations
+                Section(header: Text("Recommendations")) {
                     recommendationRow(
                         icon: "arrow.up.arrow.down",
-                        title: "Популярность",
+                        title: "Popularity",
                         detail: popularityLabel()
                     )
 
                     recommendationRow(
                         icon: "cart.fill",
-                        title: "Рекомендация по заказу",
+                        title: "Order recommendation",
                         detail: orderRecommendation()
                     )
 
                     recommendationRow(
                         icon: "dollarsign.circle",
-                        title: "Ценовая рекомендация",
+                        title: "Price recommendation",
                         detail: priceRecommendation()
                     )
                 }
             }
-            .navigationTitle("Анализ товара")
+            .navigationTitle("Item Analysis")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Закрыть") {
+                    Button("Close") {
                         dismiss()
                     }
                 }
@@ -614,7 +614,7 @@ struct MerchItemAnalyticsView: View {
         }
     }
 
-    // MARK: - Вспомогательные функции и компоненты
+    // MARK: - Helper functions and components
 
     private func totalSoldQuantity() -> Int {
         return merchService.sales
@@ -701,13 +701,13 @@ struct MerchItemAnalyticsView: View {
         let sales = totalSoldQuantity()
 
         if sales == 0 {
-            return "Нет продаж. Рассмотрите рекламные акции."
+            return "No sales. Consider promotional actions."
         } else if sales < 5 {
-            return "Низкая популярность. Возможно, стоит снизить цену."
+            return "Low popularity. Consider reducing the price."
         } else if sales < 20 {
-            return "Средняя популярность. Товар продается стабильно."
+            return "Average popularity. Item sells steadily."
         } else {
-            return "Высокая популярность! Рассмотрите увеличение запасов."
+            return "High popularity! Consider increasing stock."
         }
     }
 
@@ -716,13 +716,13 @@ struct MerchItemAnalyticsView: View {
         let stock = item.totalStock
 
         if sales == 0 {
-            return "Рано для дополнительного заказа."
+            return "Too early for additional orders."
         } else if stock < item.lowStockThreshold {
-            return "Срочно требуется пополнение запасов!"
+            return "Urgent restock required!"
         } else if stock < sales / 2 {
-            return "Рекомендуется заказать дополнительно \(sales - stock) шт."
+            return "Recommended to order additional \(sales - stock) pcs."
         } else {
-            return "Текущий запас оптимален."
+            return "Current stock is optimal."
         }
     }
 
@@ -730,13 +730,13 @@ struct MerchItemAnalyticsView: View {
         let sales = totalSoldQuantity()
 
         if sales == 0 {
-            return "Рассмотрите временное снижение цены для стимуляции продаж."
+            return "Consider temporary price reduction to stimulate sales."
         } else if sales > 30 && item.hasLowStock {
-            return "Высокий спрос. Можно рассмотреть повышение цены на 5-10%."
+            return "High demand. Consider increasing price by 5-10%."
         } else if sales > 15 {
-            return "Хороший спрос. Текущая цена оптимальна."
+            return "Good demand. Current price is optimal."
         } else {
-            return "Средний спрос. Держите текущую цену."
+            return "Average demand. Maintain current price."
         }
     }
 }

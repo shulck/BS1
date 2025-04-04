@@ -17,7 +17,7 @@ struct SalesHistoryView: View {
                             Image(systemName: "bag")
                                 .font(.system(size: 64))
                                 .foregroundColor(.gray)
-                            Text("Нет истории продаж")
+                            Text("No sales history")
                                 .foregroundColor(.gray)
                         }
                         Spacer()
@@ -36,12 +36,12 @@ struct SalesHistoryView: View {
                                         .foregroundColor(.primary)
 
                                     if item.category == .clothing {
-                                        Text("Размер: \(sale.size)")
+                                        Text("Size: \(sale.size)")
                                             .font(.subheadline)
                                             .foregroundColor(.secondary)
                                     }
 
-                                    Text("Канал: \(sale.channel.rawValue)")
+                                    Text("Channel: \(sale.channel.rawValue)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -49,7 +49,7 @@ struct SalesHistoryView: View {
                                 Spacer()
 
                                 VStack(alignment: .trailing, spacing: 4) {
-                                    Text("\(sale.quantity) шт.")
+                                    Text("\(sale.quantity) pcs.")
                                         .font(.headline)
 
                                     Text("\(saleAmount(sale), specifier: "%.2f") EUR")
@@ -61,11 +61,11 @@ struct SalesHistoryView: View {
                     }
                 }
             }
-            .navigationTitle("История продаж")
+            .navigationTitle("Sales History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Закрыть") {
+                    Button("Close") {
                         dismiss()
                     }
                 }

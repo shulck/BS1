@@ -1,33 +1,33 @@
 // FinanceModel.swift
-// Объединённые модели: типы и категории
+// Combined models: types and categories
 
 import Foundation
 
-// MARK: - Тип операции
+// MARK: - Operation type
 enum FinanceType: String, Codable, CaseIterable, Identifiable {
-    case income = "Доход"
-    case expense = "Расход"
+    case income = "Income"
+    case expense = "Expense"
 
     var id: String { rawValue }
 }
 
-// MARK: - Категория
+// MARK: - Category
 enum FinanceCategory: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 
-    // Расходы
-    case logistics = "Логистика"
-    case accommodation = "Проживание"
-    case food = "Питание"
-    case gear = "Оборудование"
-    case promo = "Продвижение"
-    case other = "Другое"
+    // Expenses
+    case logistics = "Logistics"
+    case accommodation = "Accommodation"
+    case food = "Food"
+    case gear = "Equipment"
+    case promo = "Promotion"
+    case other = "Other"
 
-    // Доходы
-    case performance = "Выступления"
-    case merch = "Мерч"
-    case royalties = "Роялти"
-    case sponsorship = "Спонсорство"
+    // Income
+    case performance = "Performances"
+    case merch = "Merchandise"
+    case royalties = "Royalties"
+    case sponsorship = "Sponsorship"
 
     static func forType(_ type: FinanceType) -> [FinanceCategory] {
         switch type {

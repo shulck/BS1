@@ -35,7 +35,7 @@ final class SetlistPDFExporter {
             content.append(NSAttributedString(string: line))
         }
 
-        content.append(NSAttributedString(string: "\nИтог: \(setlist.formattedTotalDuration)"))
+        content.append(NSAttributedString(string: "\nTotal: \(setlist.formattedTotalDuration)"))
 
         let pageBounds = CGRect(x: 0, y: 0, width: 612, height: 792) // A4
         let renderer = UIGraphicsImageRenderer(bounds: pageBounds)

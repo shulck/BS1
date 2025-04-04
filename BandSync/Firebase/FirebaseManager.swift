@@ -15,40 +15,40 @@ class FirebaseManager {
     private let initializationLock = NSLock()
     
     private init() {
-        print("FirebaseManager: создан экземпляр")
+        print("FirebaseManager: instance created")
     }
     
     func initialize() {
-        print("FirebaseManager: попытка инициализации Firebase")
-        // Используем лок для потокобезопасности
+        print("FirebaseManager: attempting to initialize Firebase")
+        // Using lock for thread safety
         initializationLock.lock()
-        print("FirebaseManager: лок получен")
+        print("FirebaseManager: lock acquired")
         defer {
             initializationLock.unlock()
-            print("FirebaseManager: лок освобожден")
+            print("FirebaseManager: lock released")
         }
         
-        if !isInitialized {
-            print("FirebaseManager: Firebase не был инициализирован, инициализируем")
+        if (!isInitialized) {
+            print("FirebaseManager: Firebase was not initialized, initializing")
             do {
                 FirebaseApp.configure()
-                print("FirebaseManager: Firebase успешно инициализирован")
+                print("FirebaseManager: Firebase successfully initialized")
                 isInitialized = true
             } catch let error {
-                print("FirebaseManager: ОШИБКА инициализации Firebase: \(error)")
+                print("FirebaseManager: ERROR initializing Firebase: \(error)")
             }
         } else {
-            print("FirebaseManager: Firebase уже был инициализирован")
+            print("FirebaseManager: Firebase was already initialized")
         }
     }
     
     func ensureInitialized() {
-        print("FirebaseManager: проверка инициализации")
-        if !isInitialized {
-            print("FirebaseManager: требуется инициализация")
+        print("FirebaseManager: checking initialization")
+        if (!isInitialized) {
+            print("FirebaseManager: initialization required")
             initialize()
         } else {
-            print("FirebaseManager: уже инициализирован")
+            print("FirebaseManager: already initialized")
         }
     }
 }

@@ -16,27 +16,27 @@ final class UserService: ObservableObject {
     private let db = Firestore.firestore()
     
     init() {
-        print("UserService: инициализирован")
+        print("UserService: initialized")
     }
     
     func fetchCurrentUser(completion: @escaping (Bool) -> Void) {
-        print("UserService: загрузка текущего пользователя")
+        print("UserService: loading current user")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         guard let uid = Auth.auth().currentUser?.uid else {
-            print("UserService: нет текущего пользователя")
+            print("UserService: no current user")
             DispatchQueue.main.async {
                 completion(false)
             }
             return
         }
         
-        print("UserService: запрос данных пользователя из Firestore, uid: \(uid)")
+        print("UserService: requesting user data from Firestore, uid: \(uid)")
         db.collection("users").document(uid).getDocument { [weak self] snapshot, error in
             if let error = error {
-                print("UserService: ошибка загрузки данных пользователя: \(error.localizedDescription)")
+                print("UserService: error loading user data: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(false)
                 }
@@ -44,7 +44,7 @@ final class UserService: ObservableObject {
             }
             
             guard let snapshot = snapshot, snapshot.exists else {
-                print("UserService: документ пользователя не существует")
+                print("UserService: user document doesn't exist")
                 DispatchQueue.main.async {
                     completion(false)
                 }
@@ -52,9 +52,9 @@ final class UserService: ObservableObject {
             }
             
             if let data = snapshot.data() {
-                print("UserService: данные пользователя получены: \(data)")
+                print("UserService: user data received: \(data)")
                 
-                // Создаем UserModel напрямую из данных, без сериализации в JSON
+                // Create UserModel directly from data without JSON serialization
                 let user = UserModel(
                     id: data["id"] as? String ?? uid,
                     email: data["email"] as? String ?? "",
@@ -66,11 +66,11 @@ final class UserService: ObservableObject {
                 
                 DispatchQueue.main.async {
                     self?.currentUser = user
-                    print("UserService: currentUser установлен")
+                    print("UserService: currentUser set")
                     completion(true)
                 }
             } else {
-                print("UserService: данные пользователя отсутствуют")
+                print("UserService: user data is missing")
                 DispatchQueue.main.async {
                     completion(false)
                 }
@@ -79,13 +79,13 @@ final class UserService: ObservableObject {
     }
     
     func updateUserGroup(groupId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        print("UserService: обновление группы пользователя на \(groupId)")
+        print("UserService: updating user group to \(groupId)")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         guard let uid = Auth.auth().currentUser?.uid else {
-            print("UserService: нет текущего пользователя для обновления группы")
+            print("UserService: no current user to update group")
             return
         }
         
@@ -93,10 +93,10 @@ final class UserService: ObservableObject {
             "groupId": groupId
         ]) { error in
             if let error = error {
-                print("UserService: ошибка обновления группы: \(error.localizedDescription)")
+                print("UserService: error updating group: \(error.localizedDescription)")
                 completion(.failure(error))
             } else {
-                print("UserService: группа успешно обновлена")
+                print("UserService: group successfully updated")
                 self.fetchCurrentUser { _ in }
                 completion(.success(()))
             }

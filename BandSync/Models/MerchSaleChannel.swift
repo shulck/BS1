@@ -17,11 +17,11 @@ import Foundation
 import FirebaseFirestore
 
 enum MerchSaleChannel: String, Codable, CaseIterable, Identifiable {
-    case concert = "Концерт"
-    case online = "Онлайн"
-    case store = "Магазин"
-    case gift = "Подарок"  // Новый канал для подарков
-    case other = "Другое"
+    case concert = "Concert"
+    case online = "Online"
+    case store = "Store"
+    case gift = "Gift"  // New channel for gifts
+    case other = "Other"
 
     var id: String { rawValue }
 }

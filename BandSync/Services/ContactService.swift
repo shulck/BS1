@@ -34,7 +34,7 @@ final class ContactService: ObservableObject {
                         self?.contacts = items
                     }
                 } else {
-                    print("Ошибка загрузки контактов: \(error?.localizedDescription ?? "неизвестно")")
+                    print("Error loading contacts: \(error?.localizedDescription ?? "unknown")")
                 }
             }
     }
@@ -43,7 +43,7 @@ final class ContactService: ObservableObject {
         do {
             _ = try db.collection("contacts").addDocument(from: contact) { error in
                 if let error = error {
-                    print("Ошибка добавления контакта: \(error.localizedDescription)")
+                    print("Error adding contact: \(error.localizedDescription)")
                     completion(false)
                 } else {
                     self.fetchContacts(for: contact.groupId)
@@ -51,7 +51,7 @@ final class ContactService: ObservableObject {
                 }
             }
         } catch {
-            print("Ошибка сериализации контакта: \(error)")
+            print("Error serializing contact: \(error)")
             completion(false)
         }
     }
@@ -61,7 +61,7 @@ final class ContactService: ObservableObject {
         do {
             try db.collection("contacts").document(id).setData(from: contact) { error in
                 if let error = error {
-                    print("Ошибка обновления контакта: \(error.localizedDescription)")
+                    print("Error updating contact: \(error.localizedDescription)")
                     completion(false)
                 } else {
                     self.fetchContacts(for: contact.groupId)
@@ -69,7 +69,7 @@ final class ContactService: ObservableObject {
                 }
             }
         } catch {
-            print("Ошибка сериализации: \(error)")
+            print("Serialization error: \(error)")
             completion(false)
         }
     }
@@ -78,7 +78,7 @@ final class ContactService: ObservableObject {
         guard let id = contact.id else { return }
         db.collection("contacts").document(id).delete { error in
             if let error = error {
-                print("Ошибка удаления: \(error.localizedDescription)")
+                print("Error deleting: \(error.localizedDescription)")
             } else if let groupId = AppState.shared.user?.groupId {
                 self.fetchContacts(for: groupId)
             }

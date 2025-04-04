@@ -25,14 +25,14 @@ struct PermissionModel: Identifiable, Codable, Equatable {
         var moduleId: ModuleType
         var roleAccess: [UserModel.UserRole]
         
-        // Проверка, имеет ли роль доступ к модулю
+        // Check if the role has access to the module
         func hasAccess(role: UserModel.UserRole) -> Bool {
             return roleAccess.contains(role)
         }
     }
 }
 
-// Типы модулей приложения
+// Application module types
 enum ModuleType: String, Codable, CaseIterable, Identifiable {
     case calendar = "calendar"
     case setlists = "setlists"
@@ -47,14 +47,14 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
     
     var displayName: String {
         switch self {
-        case .calendar: return "Календарь"
-        case .setlists: return "Сетлисты"
-        case .finances: return "Финансы"
-        case .merchandise: return "Мерч"
-        case .tasks: return "Задачи"
-        case .chats: return "Чаты"
-        case .contacts: return "Контакты"
-        case .admin: return "Админ-панель"
+        case .calendar: return "Calendar"
+        case .setlists: return "Setlists"
+        case .finances: return "Finances"
+        case .merchandise: return "Merchandise"
+        case .tasks: return "Tasks"
+        case .chats: return "Chats"
+        case .contacts: return "Contacts"
+        case .admin: return "Admin Panel"
         }
     }
     

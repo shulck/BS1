@@ -23,13 +23,13 @@ struct JoinGroupView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Код группы")) {
-                    TextField("Введите код приглашения", text: $viewModel.groupCode)
+                Section(header: Text("Group code")) {
+                    TextField("Enter invitation code", text: $viewModel.groupCode)
                         .autocapitalization(.allCharacters)
                 }
                 
                 Section {
-                    Button("Присоединиться") {
+                    Button("Join") {
                         joinGroup()
                     }
                     .disabled(viewModel.groupCode.isEmpty || viewModel.isLoading)
@@ -57,10 +57,10 @@ struct JoinGroupView: View {
                     }
                 }
             }
-            .navigationTitle("Присоединиться к группе")
+            .navigationTitle("Join group")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
@@ -77,7 +77,7 @@ struct JoinGroupView: View {
                     dismiss()
                 }
             case .failure:
-                // Ошибка уже будет отображена через viewModel.errorMessage
+                // Error will already be displayed through viewModel.errorMessage
                 break
             }
         }

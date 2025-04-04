@@ -27,26 +27,26 @@ struct LoginView: View {
                     .autocapitalization(.none)
                     .textFieldStyle(.roundedBorder)
 
-                SecureField("Пароль", text: $viewModel.password)
+                SecureField("Password", text: $viewModel.password)
                     .textContentType(.password)
                     .textFieldStyle(.roundedBorder)
 
-                Button("Войти") {
+                Button("Login") {
                     viewModel.login()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(viewModel.email.isEmpty || viewModel.password.isEmpty)
 
-                Button("Войти с Face ID") {
+                Button("Login with Face ID") {
                     authenticateWithFaceID()
                 }
 
-                Button("Забыли пароль?") {
+                Button("Forgot password?") {
                     showForgotPassword = true
                 }
                 .padding(.top, 5)
 
-                NavigationLink("Регистрация", destination: RegisterView())
+                NavigationLink("Registration", destination: RegisterView())
                     .padding(.top)
 
                 if let error = viewModel.errorMessage {
@@ -59,7 +59,7 @@ struct LoginView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Вход")
+            .navigationTitle("Login")
             .fullScreenCover(isPresented: $showForgotPassword) {
                 ForgotPasswordView()
             }
@@ -71,19 +71,19 @@ struct LoginView: View {
         var error: NSError?
 
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Вход с Face ID") { success, error in
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Login with Face ID") { success, error in
                 if success {
                     DispatchQueue.main.async {
                         viewModel.isAuthenticated = true
                     }
                 } else {
                     DispatchQueue.main.async {
-                        viewModel.errorMessage = "Ошибка Face ID"
+                        viewModel.errorMessage = "Face ID error"
                     }
                 }
             }
         } else {
-            viewModel.errorMessage = "Face ID недоступен"
+            viewModel.errorMessage = "Face ID not available"
         }
     }
 }

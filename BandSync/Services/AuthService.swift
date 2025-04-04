@@ -15,29 +15,29 @@ final class AuthService {
     private let db = Firestore.firestore()
     
     private init() {
-        print("AuthService: инициализирован")
+        print("AuthService: initialized")
     }
     
     func registerUser(email: String, password: String, name: String, phone: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        print("AuthService: начало регистрации пользователя с email \(email)")
+        print("AuthService: starting user registration with email \(email)")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         auth.createUser(withEmail: email, password: password) { [weak self] result, error in
             if let error = error {
-                print("AuthService: ошибка при создании пользователя: \(error.localizedDescription)")
+                print("AuthService: error creating user: \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }
 
             guard let uid = result?.user.uid else {
-                print("AuthService: UID отсутствует после создания пользователя")
+                print("AuthService: UID missing after user creation")
                 completion(.failure(NSError(domain: "UIDMissing", code: -1, userInfo: nil)))
                 return
             }
             
-            print("AuthService: пользователь создан с UID: \(uid)")
+            print("AuthService: user created with UID: \(uid)")
 
             let userData: [String: Any] = [
                 "id": uid,
@@ -48,14 +48,14 @@ final class AuthService {
                 "role": "Member"
             ]
             
-            print("AuthService: сохранение данных пользователя: \(userData)")
+            print("AuthService: saving user data: \(userData)")
 
             self?.db.collection("users").document(uid).setData(userData) { error in
                 if let error = error {
-                    print("AuthService: ошибка при сохранении данных пользователя: \(error.localizedDescription)")
+                    print("AuthService: error saving user data: \(error.localizedDescription)")
                     completion(.failure(error))
                 } else {
-                    print("AuthService: данные пользователя успешно сохранены")
+                    print("AuthService: user data successfully saved")
                     completion(.success(()))
                 }
             }
@@ -63,74 +63,74 @@ final class AuthService {
     }
 
     func loginUser(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        print("AuthService: попытка входа пользователя с email \(email)")
+        print("AuthService: attempting to log in user with email \(email)")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         auth.signIn(withEmail: email, password: password) { _, error in
             if let error = error {
-                print("AuthService: ошибка при входе: \(error.localizedDescription)")
+                print("AuthService: error logging in: \(error.localizedDescription)")
                 completion(.failure(error))
             } else {
-                print("AuthService: вход пользователя успешен")
+                print("AuthService: user login successful")
                 completion(.success(()))
             }
         }
     }
 
     func resetPassword(email: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        print("AuthService: отправка запроса на сброс пароля для email \(email)")
+        print("AuthService: sending password reset request for email \(email)")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         auth.sendPasswordReset(withEmail: email) { error in
             if let error = error {
-                print("AuthService: ошибка при сбросе пароля: \(error.localizedDescription)")
+                print("AuthService: error resetting password: \(error.localizedDescription)")
                 completion(.failure(error))
             } else {
-                print("AuthService: запрос на сброс пароля отправлен успешно")
+                print("AuthService: password reset request sent successfully")
                 completion(.success(()))
             }
         }
     }
 
     func signOut(completion: @escaping (Result<Void, Error>) -> Void) {
-        print("AuthService: попытка выхода пользователя")
+        print("AuthService: attempting to log out user")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         do {
             try auth.signOut()
-            print("AuthService: выход пользователя успешен")
+            print("AuthService: user logout successful")
             completion(.success(()))
         } catch {
-            print("AuthService: ошибка при выходе: \(error.localizedDescription)")
+            print("AuthService: error logging out: \(error.localizedDescription)")
             completion(.failure(error))
         }
     }
 
     func isUserLoggedIn() -> Bool {
-        print("AuthService: проверка авторизации пользователя")
+        print("AuthService: checking user authorization")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         let isLoggedIn = auth.currentUser != nil
-        print("AuthService: пользователь \(isLoggedIn ? "авторизован" : "не авторизован")")
+        print("AuthService: user is \(isLoggedIn ? "authorized" : "not authorized")")
         return isLoggedIn
     }
 
     func currentUserUID() -> String? {
-        print("AuthService: запрос UID текущего пользователя")
+        print("AuthService: requesting current user UID")
         
-        // Убедимся, что Firebase инициализирован
+        // Make sure Firebase is initialized
         FirebaseManager.shared.ensureInitialized()
         
         let uid = auth.currentUser?.uid
-        print("AuthService: UID текущего пользователя: \(uid ?? "отсутствует")")
+        print("AuthService: current user UID: \(uid ?? "missing")")
         return uid
     }
 }

@@ -22,18 +22,18 @@ struct RoleView: View {
 
     var body: some View {
         Form {
-            Picker("Роль", selection: $selectedRole) {
+            Picker("Role", selection: $selectedRole) {
                 ForEach(UserModel.UserRole.allCases, id: \.self) {
                     Text($0.rawValue).tag($0)
                 }
             }
 
-            Button("Сохранить") {
+            Button("Save") {
                 changeRole()
             }
             .disabled(userId.isEmpty)
         }
-        .navigationTitle("Изменить роль")
+        .navigationTitle("Change role")
     }
 
     private func changeRole() {

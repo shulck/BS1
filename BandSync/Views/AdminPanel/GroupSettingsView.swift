@@ -16,21 +16,21 @@ struct GroupSettingsView: View {
     
     var body: some View {
         Form {
-            // Название группы
-            Section(header: Text("Название группы")) {
-                TextField("Название группы", text: $newName)
+            // Group name
+            Section(header: Text("Group name")) {
+                TextField("Group name", text: $newName)
                     .autocapitalization(.words)
                 
-                Button("Обновить название") {
+                Button("Update name") {
                     groupService.updateGroupName(newName)
                     showSuccessAlert = true
                 }
                 .disabled(newName.isEmpty || groupService.isLoading)
             }
             
-            // Код приглашения
+            // Invitation code
             if let group = groupService.group {
-                Section(header: Text("Код приглашения")) {
+                Section(header: Text("Invitation code")) {
                     HStack {
                         Text(group.code)
                             .font(.system(.title3, design: .monospaced))
@@ -45,18 +45,18 @@ struct GroupSettingsView: View {
                         }
                     }
                     
-                    Button("Сгенерировать новый код") {
+                    Button("Generate new code") {
                         showConfirmation = true
                     }
                     .foregroundColor(.blue)
                 }
             }
             
-            // Участники группы (краткая информация)
-            Section(header: Text("Участники")) {
+            // Group members (brief information)
+            Section(header: Text("Members")) {
                 NavigationLink(destination: UsersListView()) {
                     HStack {
-                        Text("Управление участниками")
+                        Text("Manage members")
                         Spacer()
                         Text("\(groupService.groupMembers.count)")
                             .foregroundColor(.gray)
@@ -64,13 +64,13 @@ struct GroupSettingsView: View {
                 }
             }
             
-            // Управление модулями (здесь можно будет добавить функциональность для включения/отключения модулей)
-            Section(header: Text("Доступные модули")) {
-                Text("Управление модулями будет доступно в следующем обновлении.")
+            // Module management (functionality for enabling/disabling modules can be added here)
+            Section(header: Text("Available modules")) {
+                Text("Module management will be available in the next update.")
                     .foregroundColor(.gray)
             }
             
-            // Отображение ошибок
+            // Display errors
             if let error = groupService.errorMessage {
                 Section {
                     Text(error)
@@ -78,7 +78,7 @@ struct GroupSettingsView: View {
                 }
             }
             
-            // Индикатор загрузки
+            // Loading indicator
             if groupService.isLoading {
                 Section {
                     HStack {
@@ -89,7 +89,7 @@ struct GroupSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Настройки группы")
+        .navigationTitle("Group settings")
         .onAppear {
             if let gid = AppState.shared.user?.groupId {
                 groupService.fetchGroup(by: gid)
@@ -101,19 +101,19 @@ struct GroupSettingsView: View {
                 newName = name
             }
         }
-        .alert("Сгенерировать новый код?", isPresented: $showConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Сгенерировать") {
+        .alert("Generate new code?", isPresented: $showConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Generate") {
                 groupService.regenerateCode()
                 showSuccessAlert = true
             }
         } message: {
-            Text("Старый код больше не будет действителен. Все участники, которые еще не присоединились, должны будут использовать новый код.")
+            Text("The old code will no longer be valid. All members who haven't joined yet will need to use the new code.")
         }
-        .alert("Успешно", isPresented: $showSuccessAlert) {
+        .alert("Success", isPresented: $showSuccessAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Изменения успешно сохранены.")
+            Text("Changes saved successfully.")
         }
     }
 }

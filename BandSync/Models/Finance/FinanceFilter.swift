@@ -1,5 +1,5 @@
 // FinanceFilter.swift
-// Единая фильтрация по дате, типу, сумме и категориям
+// Unified filtering by date, type, amount and categories
 
 import Foundation
 

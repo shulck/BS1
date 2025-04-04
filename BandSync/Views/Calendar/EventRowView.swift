@@ -1,40 +1,36 @@
 import SwiftUI
 
+// View for individual event row
 struct EventRowView: View {
     let event: Event
     
     var body: some View {
         HStack {
-            // Индикатор цвета слева
+            // Color indicator of event type
             Rectangle()
-                .fill(event.typeColor)
+                .fill(Color(hex: event.type.color))
                 .frame(width: 4)
                 .cornerRadius(2)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.title)
                     .font(.headline)
-                    .lineLimit(1)
                 
                 HStack {
                     Text(event.type.rawValue)
                         .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(event.typeColor.opacity(0.2))
+                        .padding(3)
+                        .padding(.horizontal, 3)
+                        .background(Color(hex: event.type.color).opacity(0.2))
                         .cornerRadius(4)
                     
                     Text(event.status.rawValue)
                         .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(4)
+                        .foregroundColor(.gray)
                     
                     Spacer()
                     
-                    // Отображаем время события
-                    Text(event.formattedTime)
+                    Text(formatTime(event.date))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -42,19 +38,19 @@ struct EventRowView: View {
                 if let location = event.location, !location.isEmpty {
                     Text(location)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                         .lineLimit(1)
                 }
             }
-            .padding(.leading, 4)
-            
-            // Иконка личного события (будет добавлена в следующем шаге)
-            if event.isPersonal {
-                Image(systemName: "person.crop.circle")
-                    .foregroundColor(.secondary)
-                    .padding(.leading, 4)
-            }
+            .padding(.leading, 8)
         }
         .padding(.vertical, 4)
+    }
+    
+    // Time formatting
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

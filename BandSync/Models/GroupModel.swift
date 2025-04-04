@@ -23,7 +23,7 @@ struct GroupModel: Identifiable, Codable, Equatable {
     var members: [String]
     var pendingMembers: [String]
     
-    // Реализация Equatable для сравнения объектов
+    // Implementation of Equatable for object comparison
     static func == (lhs: GroupModel, rhs: GroupModel) -> Bool {
         return lhs.id == rhs.id &&
                lhs.name == rhs.name &&

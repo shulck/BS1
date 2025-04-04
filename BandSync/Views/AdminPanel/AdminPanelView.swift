@@ -16,42 +16,42 @@ struct AdminPanelView: View {
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("Управление группой")) {
-                    // Настройки группы
+                Section(header: Text("Group management")) {
+                    // Group settings
                     NavigationLink(destination: GroupSettingsView()) {
-                        Label("Настройки группы", systemImage: "gearshape")
+                        Label("Group settings", systemImage: "gearshape")
                     }
                     
-                    // Управление участниками
+                    // Member management
                     NavigationLink(destination: UsersListView()) {
-                        Label("Участники группы", systemImage: "person.3")
+                        Label("Group members", systemImage: "person.3")
                     }
                     
-                    // Управление разрешениями
+                    // Permission management
                     NavigationLink(destination: PermissionsView()) {
-                        Label("Разрешения", systemImage: "lock.shield")
+                        Label("Permissions", systemImage: "lock.shield")
                     }
                     
-                    // Управление модулями
+                    // Module management
                     NavigationLink(destination: ModuleManagementView()) {
-                        Label("Модули приложения", systemImage: "square.grid.2x2")
+                        Label("App modules", systemImage: "square.grid.2x2")
                     }
                 }
                 
-                Section(header: Text("Статистика")) {
-                    // Статистика использования приложения
-                    Label("Количество участников: \(groupService.groupMembers.count)", systemImage: "person.2")
+                Section(header: Text("Statistics")) {
+                    // App usage statistics
+                    Label("Number of members: \(groupService.groupMembers.count)", systemImage: "person.2")
                     
                     if let group = groupService.group {
-                        Label("Название группы: \(group.name)", systemImage: "music.mic")
+                        Label("Group name: \(group.name)", systemImage: "music.mic")
                         
-                        // Код приглашения с возможностью копирования
+                        // Invitation code with copy option
                         HStack {
-                            Label("Код приглашения: \(group.code)", systemImage: "qrcode")
+                            Label("Invitation code: \(group.code)", systemImage: "qrcode")
                             Spacer()
                             Button {
                                 UIPasteboard.general.string = group.code
-                                alertMessage = "Код скопирован в буфер обмена"
+                                alertMessage = "Code copied to clipboard"
                                 showAlert = true
                             } label: {
                                 Image(systemName: "doc.on.doc")
@@ -61,25 +61,25 @@ struct AdminPanelView: View {
                     }
                 }
                 
-                Section(header: Text("Дополнительно")) {
+                Section(header: Text("Additional")) {
                     Button(action: {
-                        // Функция для тестирования уведомлений
-                        alertMessage = "Уведомления будут реализованы в следующем обновлении"
+                        // Function for testing notifications
+                        alertMessage = "Notifications will be implemented in the next update"
                         showAlert = true
                     }) {
-                        Label("Тестировать уведомления", systemImage: "bell")
+                        Label("Test notifications", systemImage: "bell")
                     }
                     
                     Button(action: {
-                        // Функция экспорта данных
-                        alertMessage = "Экспорт данных будет реализован в следующем обновлении"
+                        // Data export function
+                        alertMessage = "Data export will be implemented in the next update"
                         showAlert = true
                     }) {
-                        Label("Экспорт данных группы", systemImage: "square.and.arrow.up")
+                        Label("Export group data", systemImage: "square.and.arrow.up")
                     }
                 }
             }
-            .navigationTitle("Админ-панель")
+            .navigationTitle("Admin panel")
             .onAppear {
                 if let groupId = AppState.shared.user?.groupId {
                     groupService.fetchGroup(by: groupId)
@@ -87,9 +87,9 @@ struct AdminPanelView: View {
             }
             .alert(isPresented: $showAlert) {
                 Alert(
-                    title: Text("Информация"),
+                    title: Text("Information"),
                     message: Text(alertMessage),
-                    dismissButton: .default(Text("ОК"))
+                    dismissButton: .default(Text("OK"))
                 )
             }
             .refreshable {

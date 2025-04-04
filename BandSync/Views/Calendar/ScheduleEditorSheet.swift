@@ -11,110 +11,131 @@ struct ScheduleEditorSheet: View {
     @Binding var schedule: [String]?
     @State private var workingSchedule: [String] = []
     @State private var newItem = ""
-    
+    @State private var isEditMode: EditMode = .inactive
+
     var body: some View {
         NavigationView {
-            VStack {
-                // Поле для добавления нового пункта
-                HStack {
-                    TextField("Новый пункт расписания", text: $newItem)
-                        .textFieldStyle(.roundedBorder)
-                    
-                    Button(action: {
-                        if !newItem.isEmpty {
-                            withAnimation {
-                                workingSchedule.append(newItem)
-                                newItem = ""
-                            }
-                        }
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.blue)
-                    }
-                }
-                .padding()
-                
-                // Список существующих пунктов
-                List {
-                    ForEach(workingSchedule.indices, id: \.self) { index in
-                        HStack {
-                            // Время и описание мероприятия
-                            if workingSchedule[index].contains(" - ") {
-                                let components = workingSchedule[index].split(separator: " - ", maxSplits: 1)
-                                if components.count == 2 {
-                                    Text(String(components[0]))
-                                        .bold()
-                                        .frame(width: 70, alignment: .leading)
-                                    
-                                    Text(String(components[1]))
-                                }
-                            } else {
-                                Text(workingSchedule[index])
-                            }
-                            
-                            Spacer()
-                            
-                            // Кнопка удаления
-                            Button(action: {
-                                withAnimation {
-                                    workingSchedule.remove(at: index)
-                                }
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    .onMove { source, destination in
-                        workingSchedule.move(fromOffsets: source, toOffset: destination)
-                    }
-                }
-                
-                // Подсказка о формате
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Совет: для указания времени используйте формат")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("«10:00 - Описание мероприятия»")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(8)
-                .padding()
-            }
-            .navigationTitle("Расписание дня")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+            scheduleContent
+                .navigationTitle("Daily Schedule")
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarItems(
+                    leading: Button("Cancel") { dismiss() },
+                    trailing: Button("Save") {
+                        schedule = workingSchedule.isEmpty ? nil : workingSchedule
                         dismiss()
                     }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
-                        if workingSchedule.isEmpty {
-                            schedule = nil
-                        } else {
-                            schedule = workingSchedule
-                        }
-                        dismiss()
+                )
+                .environment(\.editMode, $isEditMode)
+                .onAppear {
+                    if let existingSchedule = schedule {
+                        workingSchedule = existingSchedule
                     }
                 }
-                
-                ToolbarItem(placement: .bottomBar) {
-                    EditButton()
+        }
+    }
+
+    private var scheduleContent: some View {
+        VStack {
+            // Field for adding a new item
+            HStack {
+                TextField("New schedule item", text: $newItem)
+                    .textFieldStyle(.roundedBorder)
+
+                Button(action: {
+                    if !newItem.isEmpty {
+                        withAnimation {
+                            workingSchedule.append(newItem)
+                            newItem = ""
+                        }
+                    }
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.blue)
                 }
             }
-            .onAppear {
-                // Инициализируем рабочий список
-                if let existingSchedule = schedule {
-                    workingSchedule = existingSchedule
+            .padding()
+
+            // List of existing items
+            scheduleList
+
+            // Format hint
+            formatHint
+        }
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button(action: {
+                    isEditMode = (isEditMode == .active) ? .inactive : .active
+                }) {
+                    Text(isEditMode == .active ? "Done" : "Edit")
                 }
             }
         }
+    }
+
+    private var scheduleList: some View {
+        List {
+            ForEach(workingSchedule.indices, id: \.self) { index in
+                scheduleRow(for: index)
+            }
+            .onMove { source, destination in
+                workingSchedule.move(fromOffsets: source, toOffset: destination)
+            }
+            .onDelete { indexSet in
+                workingSchedule.remove(atOffsets: indexSet)
+            }
+        }
+    }
+
+    private func scheduleRow(for index: Int) -> some View {
+        HStack {
+            // Time and event description
+            if workingSchedule[index].contains(" - ") {
+                let components = workingSchedule[index].split(separator: " - ", maxSplits: 1)
+                if components.count == 2 {
+                    Text(String(components[0]))
+                        .bold()
+                        .frame(width: 70, alignment: .leading)
+
+                    Text(String(components[1]))
+                }
+            } else {
+                Text(workingSchedule[index])
+            }
+
+            Spacer()
+
+            // Delete button shown only when not in edit mode
+            if isEditMode == .inactive {
+                Button(action: {
+                    withAnimation {
+                        // Explicitly specify array type before method call
+                        // to avoid ambiguity
+                        workingSchedule.removeAll(where: { $0 == workingSchedule[index] })
+                        // Alternative:
+                        // let indexToRemove = index
+                        // workingSchedule.remove(at: indexToRemove)
+                    }
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+    }
+
+    private var formatHint: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Tip: for time indication use format")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text("«10:00 - Event description»")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.blue.opacity(0.1))
+        .cornerRadius(8)
+        .padding()
     }
 }

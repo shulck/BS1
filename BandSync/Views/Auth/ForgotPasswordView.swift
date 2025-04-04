@@ -14,7 +14,7 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Восстановление пароля")
+            Text("Password Recovery")
                 .font(.title.bold())
                 .padding(.top)
 
@@ -24,7 +24,7 @@ struct ForgotPasswordView: View {
                 .autocapitalization(.none)
                 .textFieldStyle(.roundedBorder)
 
-            Button("Сбросить пароль") {
+            Button("Reset Password") {
                 viewModel.resetPassword()
             }
             .buttonStyle(.borderedProminent)
@@ -38,7 +38,7 @@ struct ForgotPasswordView: View {
 
             Spacer()
 
-            Button("Назад") {
+            Button("Back") {
                 dismiss()
             }
         }

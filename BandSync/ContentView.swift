@@ -16,10 +16,10 @@ struct ContentView: View {
             if !appState.isLoggedIn {
                 LoginView()
             } else if appState.user?.groupId == nil {
-                // Пользователь вошел, но не имеет группы
+                // User is logged in but doesn't have a group
                 GroupSelectionView()
             } else {
-                // Пользователь вошел и имеет группу
+                // User is logged in and has a group
                 MainTabView()
             }
         }

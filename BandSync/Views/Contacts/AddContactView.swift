@@ -7,27 +7,27 @@ struct AddContactView: View {
     @State private var name = ""
     @State private var email = ""
     @State private var phone = ""
-    @State private var role = "Музыканты"
+    @State private var role = "Musicians"
     @State private var isLoading = false
     @State private var errorMessage: String?
     
-    // Доступные роли для контактов
-    private let roles = ["Музыканты", "Организаторы", "Площадки", "Продюсеры", "Звукорежиссеры", "Другие"]
+    // Available roles for contacts
+    private let roles = ["Musicians", "Organizers", "Venues", "Producers", "Sound Engineers", "Others"]
     
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Информация")) {
-                    TextField("Имя", text: $name)
+                Section(header: Text("Information")) {
+                    TextField("Name", text: $name)
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
-                    TextField("Телефон", text: $phone)
+                    TextField("Phone", text: $phone)
                         .keyboardType(.phonePad)
                 }
                 
-                Section(header: Text("Категория")) {
-                    Picker("Роль", selection: $role) {
+                Section(header: Text("Category")) {
+                    Picker("Role", selection: $role) {
                         ForEach(roles, id: \.self) {
                             Text($0)
                         }
@@ -42,16 +42,16 @@ struct AddContactView: View {
                 }
                 
                 Section {
-                    Button("Сохранить") {
+                    Button("Save") {
                         saveContact()
                     }
                     .disabled(name.isEmpty || phone.isEmpty || isLoading)
                 }
             }
-            .navigationTitle("Новый контакт")
+            .navigationTitle("New Contact")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         isPresented = false
                     }
                 }
@@ -69,7 +69,7 @@ struct AddContactView: View {
     
     private func saveContact() {
         guard let groupId = AppState.shared.user?.groupId else {
-            errorMessage = "Не удалось определить группу"
+            errorMessage = "Could not determine group"
             return
         }
         
@@ -90,7 +90,7 @@ struct AddContactView: View {
             if success {
                 isPresented = false
             } else {
-                errorMessage = "Не удалось добавить контакт"
+                errorMessage = "Failed to add contact"
             }
         }
     }

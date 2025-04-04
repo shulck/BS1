@@ -21,6 +21,6 @@ struct Contact: Identifiable, Codable {
     var name: String
     var email: String
     var phone: String
-    var role: String // "Музыкант", "Организатор", "Площадка", и т.д.
+    var role: String // "Musician", "Organizer", "Venue", etc.
     var groupId: String
 }

@@ -18,15 +18,15 @@ struct SetlistDetailView: View {
     @State private var errorMessage: String?
     @Environment(\.dismiss) var dismiss
     
-    // Временное хранение для редактирования
+    // Temporary storage for editing
     @State private var editName = ""
     
     var body: some View {
         VStack {
-            // Заголовок и информация
+            // Header and information
             VStack(alignment: .leading, spacing: 8) {
                 if isEditing {
-                    TextField("Название сетлиста", text: $editName)
+                    TextField("Setlist name", text: $editName)
                         .font(.title2.bold())
                         .padding(.horizontal)
                 } else {
@@ -36,9 +36,9 @@ struct SetlistDetailView: View {
                 }
                 
                 HStack {
-                    Text("\(setlist.songs.count) песен")
+                    Text("\(setlist.songs.count) songs")
                     Spacer()
-                    Text("Общая длительность: \(setlist.formattedTotalDuration)")
+                    Text("Total duration: \(setlist.formattedTotalDuration)")
                         .bold()
                 }
                 .font(.subheadline)
@@ -49,7 +49,7 @@ struct SetlistDetailView: View {
             
             Divider()
             
-            // Список песен
+            // Song list
             List {
                 ForEach(setlist.songs) { song in
                     HStack {
@@ -69,7 +69,7 @@ struct SetlistDetailView: View {
                 .onMove(perform: isEditing ? moveSong : nil)
                 
                 if setlist.songs.isEmpty {
-                    Text("Сетлист пустой")
+                    Text("Setlist is empty")
                         .foregroundColor(.gray)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding()
@@ -83,7 +83,7 @@ struct SetlistDetailView: View {
                     .padding()
             }
         }
-        .navigationTitle(isEditing ? "Редактирование" : "Сетлист")
+        .navigationTitle(isEditing ? "Editing" : "Setlist")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -93,25 +93,25 @@ struct SetlistDetailView: View {
                             Button {
                                 saveChanges()
                             } label: {
-                                Label("Сохранить", systemImage: "checkmark")
+                                Label("Save", systemImage: "checkmark")
                             }
                             
                             Button {
                                 showAddSong = true
                             } label: {
-                                Label("Добавить песню", systemImage: "music.note.plus")
+                                Label("Add song", systemImage: "music.note.plus")
                             }
                         } else {
                             Button {
                                 startEditing()
                             } label: {
-                                Label("Редактировать", systemImage: "pencil")
+                                Label("Edit", systemImage: "pencil")
                             }
                             
                             Button(role: .destructive) {
                                 showDeleteConfirmation = true
                             } label: {
-                                Label("Удалить сетлист", systemImage: "trash")
+                                Label("Delete setlist", systemImage: "trash")
                             }
                         }
                     }
@@ -119,16 +119,16 @@ struct SetlistDetailView: View {
                     Button {
                         showExportView = true
                     } label: {
-                        Label("Экспорт в PDF", systemImage: "arrow.up.doc")
+                        Label("Export to PDF", systemImage: "arrow.up.doc")
                     }
                 } label: {
-                    Label("Меню", systemImage: "ellipsis.circle")
+                    Label("Menu", systemImage: "ellipsis.circle")
                 }
             }
             
             if isEditing {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         cancelEditing()
                     }
                 }
@@ -147,17 +147,17 @@ struct SetlistDetailView: View {
                     .shadow(radius: 3)
             }
         })
-        .alert("Удалить сетлист?", isPresented: $showDeleteConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Удалить", role: .destructive) {
+        .alert("Delete setlist?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
                 deleteSetlist()
             }
         } message: {
-            Text("Вы уверены, что хотите удалить этот сетлист? Это действие нельзя отменить.")
+            Text("Are you sure you want to delete this setlist? This action cannot be undone.")
         }
         .sheet(isPresented: $showAddSong) {
             AddSongView(setlist: $setlist, onSave: {
-                // После добавления песни, обновляем сетлист
+                // After adding a song, update the setlist
                 updateSetlist()
             })
         }
@@ -166,21 +166,21 @@ struct SetlistDetailView: View {
         }
     }
     
-    // Начало редактирования
+    // Start editing
     private func startEditing() {
         editName = setlist.name
         isEditing = true
     }
     
-    // Отмена редактирования
+    // Cancel editing
     private func cancelEditing() {
         editName = ""
         isEditing = false
     }
     
-    // Сохранение изменений
+    // Save changes
     private func saveChanges() {
-        // Обновляем имя сетлиста
+        // Update setlist name
         if !editName.isEmpty && editName != setlist.name {
             setlist.name = editName
         }
@@ -189,17 +189,17 @@ struct SetlistDetailView: View {
         isEditing = false
     }
     
-    // Удаление песни
+    // Delete song
     private func deleteSong(at offsets: IndexSet) {
         setlist.songs.remove(atOffsets: offsets)
     }
     
-    // Перемещение песни
+    // Move song
     private func moveSong(from source: IndexSet, to destination: Int) {
         setlist.songs.move(fromOffsets: source, toOffset: destination)
     }
     
-    // Обновление сетлиста в базе данных
+    // Update setlist in database
     private func updateSetlist() {
         isLoading = true
         errorMessage = nil
@@ -209,20 +209,20 @@ struct SetlistDetailView: View {
                 isLoading = false
                 
                 if !success {
-                    errorMessage = "Не удалось сохранить изменения"
+                    errorMessage = "Failed to save changes"
                 }
             }
         }
     }
     
-    // Удаление сетлиста
+    // Delete setlist
     private func deleteSetlist() {
         SetlistService.shared.deleteSetlist(setlist)
         dismiss()
     }
 }
 
-// Представление для добавления песни
+// View for adding a song
 struct AddSongView: View {
     @Binding var setlist: Setlist
     let onSave: () -> Void
@@ -236,16 +236,16 @@ struct AddSongView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Информация о песне")) {
-                    TextField("Название", text: $title)
+                Section(header: Text("Song Information")) {
+                    TextField("Title", text: $title)
                     
                     HStack {
-                        Text("Длительность:")
-                        TextField("Мин", text: $minutes)
+                        Text("Duration:")
+                        TextField("Min", text: $minutes)
                             .keyboardType(.numberPad)
                             .frame(width: 40)
                         Text(":")
-                        TextField("Сек", text: $seconds)
+                        TextField("Sec", text: $seconds)
                             .keyboardType(.numberPad)
                             .frame(width: 40)
                     }
@@ -254,16 +254,16 @@ struct AddSongView: View {
                         .keyboardType(.numberPad)
                 }
             }
-            .navigationTitle("Добавить песню")
+            .navigationTitle("Add Song")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Добавить") {
+                    Button("Add") {
                         addSong()
                     }
                     .disabled(title.isEmpty || (minutes.isEmpty && seconds.isEmpty) || bpm.isEmpty)
@@ -279,12 +279,12 @@ struct AddSongView: View {
         let sec = Int(seconds) ?? 0
         let bpmValue = Int(bpm) ?? 120
         
-        // Проверка валидности данных
+        // Check data validity
         if min == 0 && sec == 0 {
             return
         }
         
-        // Создаем новую песню
+        // Create new song
         let newSong = Song(
             title: title,
             durationMinutes: min,
@@ -292,13 +292,13 @@ struct AddSongView: View {
             bpm: bpmValue
         )
         
-        // Добавляем песню в сетлист
+        // Add song to setlist
         setlist.songs.append(newSong)
         
-        // Вызываем обработчик сохранения
+        // Call save handler
         onSave()
         
-        // Закрываем модальное окно
+        // Close modal
         dismiss()
     }
 }

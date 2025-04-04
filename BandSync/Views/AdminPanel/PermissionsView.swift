@@ -23,14 +23,14 @@ struct PermissionsView: View {
     
     var body: some View {
         List {
-            // Информационный раздел
-            Section(header: Text("Управление доступом")) {
-                Text("Здесь вы можете настроить, какие роли имеют доступ к различным модулям приложения.")
+            // Information section
+            Section(header: Text("Access management")) {
+                Text("Here you can configure which roles have access to different application modules.")
                     .font(.footnote)
             }
             
-            // Раздел с модулями
-            Section(header: Text("Модули")) {
+            // Modules section
+            Section(header: Text("Modules")) {
                 ForEach(ModuleType.allCases) { module in
                     Button {
                         selectedModule = module
@@ -44,7 +44,7 @@ struct PermissionsView: View {
                                 Text(module.displayName)
                                     .foregroundColor(.primary)
                                 
-                                // Отображаем роли с доступом
+                                // Display roles with access
                                 Text(accessRolesText(for: module))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -59,15 +59,15 @@ struct PermissionsView: View {
                 }
             }
             
-            // Сброс настроек
+            // Reset settings
             Section {
-                Button("Сбросить к значениям по умолчанию") {
+                Button("Reset to default values") {
                     showResetConfirmation = true
                 }
                 .foregroundColor(.red)
             }
             
-            // Индикатор загрузки
+            // Loading indicator
             if permissionService.isLoading {
                 Section {
                     HStack {
@@ -78,7 +78,7 @@ struct PermissionsView: View {
                 }
             }
             
-            // Сообщение об ошибке
+            // Error message
             if let error = permissionService.errorMessage {
                 Section {
                     Text(error)
@@ -86,19 +86,19 @@ struct PermissionsView: View {
                 }
             }
         }
-        .navigationTitle("Разрешения")
+        .navigationTitle("Permissions")
         .sheet(isPresented: $showModuleEditor) {
             if let module = selectedModule {
                 ModulePermissionEditorView(module: module)
             }
         }
-        .alert("Сбросить разрешения?", isPresented: $showResetConfirmation) {
-            Button("Отмена", role: .cancel) {}
-            Button("Сбросить", role: .destructive) {
+        .alert("Reset permissions?", isPresented: $showResetConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
                 permissionService.resetToDefaults()
             }
         } message: {
-            Text("Это действие сбросит все настройки разрешений к значениям по умолчанию. Вы уверены?")
+            Text("This action will reset all permission settings to default values. Are you sure?")
         }
         .onAppear {
             if let groupId = AppState.shared.user?.groupId {
@@ -107,36 +107,36 @@ struct PermissionsView: View {
         }
     }
     
-    // Форматирование текста ролей с доступом
+    // Format text of roles with access
     private func accessRolesText(for module: ModuleType) -> String {
         let roles = permissionService.getRolesWithAccess(to: module)
         
         if roles.isEmpty {
-            return "Нет доступа"
+            return "No access"
         }
         
         return roles.map { $0.rawValue }.joined(separator: ", ")
     }
 }
 
-// Редактор разрешений для модуля
+// Module permission editor
 struct ModulePermissionEditorView: View {
     let module: ModuleType
     @StateObject private var permissionService = PermissionService.shared
     @Environment(\.dismiss) var dismiss
     
-    // Локальное состояние выбранных ролей
+    // Local state of selected roles
     @State private var selectedRoles: Set<UserModel.UserRole> = []
     
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Доступ к модулю")) {
-                    Text("Выберите роли, которые будут иметь доступ к модулю '\(module.displayName)'")
+                Section(header: Text("Module access")) {
+                    Text("Select roles that will have access to the '\(module.displayName)' module")
                         .font(.footnote)
                 }
                 
-                Section(header: Text("Роли")) {
+                Section(header: Text("Roles")) {
                     ForEach(UserModel.UserRole.allCases, id: \.self) { role in
                         Button {
                             toggleRole(role)
@@ -169,26 +169,26 @@ struct ModulePermissionEditorView: View {
             .navigationTitle(module.displayName)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         savePermissions()
                     }
                 }
             }
             .onAppear {
-                // Загружаем текущие роли при появлении
+                // Load current roles when appearing
                 let currentRoles = permissionService.getRolesWithAccess(to: module)
                 selectedRoles = Set(currentRoles)
             }
         }
     }
     
-    // Переключение выбора роли
+    // Toggle role selection
     private func toggleRole(_ role: UserModel.UserRole) {
         if selectedRoles.contains(role) {
             selectedRoles.remove(role)
@@ -197,7 +197,7 @@ struct ModulePermissionEditorView: View {
         }
     }
     
-    // Сохранение настроек
+    // Save settings
     private func savePermissions() {
         permissionService.updateModulePermission(
             moduleId: module,

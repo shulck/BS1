@@ -23,7 +23,7 @@ struct CacheSettingsView: View {
     var body: some View {
         List {
             Section(header: Text("Cache Information".localized)) {
-                // Общий размер кэша
+                // Total cache size
                 HStack {
                     Text("Total Size".localized)
                     Spacer()
@@ -31,7 +31,7 @@ struct CacheSettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // Количество файлов
+                // Number of files
                 HStack {
                     Text("Files".localized)
                     Spacer()
@@ -39,7 +39,7 @@ struct CacheSettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // Дата самого старого кэша
+                // Oldest cache date
                 HStack {
                     Text("Oldest Cache".localized)
                     Spacer()
@@ -49,7 +49,7 @@ struct CacheSettingsView: View {
             }
             
             Section {
-                // Кнопка очистки кэша
+                // Clear cache button
                 Button(action: {
                     showClearConfirmation = true
                 }) {
@@ -64,7 +64,7 @@ struct CacheSettingsView: View {
                 }
                 .disabled(isClearing)
                 
-                // Кнопка очистки старого кэша
+                // Clear old cache button
                 Button(action: {
                     clearOldCache()
                 }) {
@@ -92,12 +92,12 @@ struct CacheSettingsView: View {
         }
     }
     
-    // Загрузка информации о кэше
+    // Load cache information
     private func loadCacheInfo() {
         cacheInfo = CacheService.shared.getCacheInfo()
     }
     
-    // Очистка всего кэша
+    // Clear all cache
     private func clearAllCache() {
         isClearing = true
         
@@ -111,7 +111,7 @@ struct CacheSettingsView: View {
         }
     }
     
-    // Очистка старого кэша
+    // Clear old cache
     private func clearOldCache() {
         isClearing = true
         
@@ -125,7 +125,7 @@ struct CacheSettingsView: View {
         }
     }
     
-    // Форматированный размер кэша
+    // Formatted cache size
     private var formattedSize: String {
         let size = cacheInfo["totalSize"] as? UInt64 ?? 0
         
@@ -138,12 +138,12 @@ struct CacheSettingsView: View {
         }
     }
     
-    // Количество файлов
+    // File count
     private var fileCount: Int {
         return cacheInfo["fileCount"] as? Int ?? 0
     }
     
-    // Форматированная дата самого старого кэша
+    // Formatted oldest cache date
     private var formattedOldestDate: String {
         guard let date = cacheInfo["oldestCache"] as? Date else {
             return "—"

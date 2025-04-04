@@ -23,18 +23,18 @@ final class SetlistService: ObservableObject {
     private var hasLoadedFromCache = false
     
     init() {
-        // Инициализация мониторинга сети
+        // Initialize network monitoring
         setupNetworkMonitoring()
     }
     
-    // Настройка мониторинга сети
+    // Set up network monitoring
     private func setupNetworkMonitoring() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
                 let isConnected = path.status == .satisfied
                 self?.isOfflineMode = !isConnected
                 
-                // При восстановлении соединения, обновляем данные
+                // When connection is restored, update data
                 if isConnected && self?.hasLoadedFromCache == true {
                     if let groupId = AppState.shared.user?.groupId {
                         self?.fetchSetlists(for: groupId)
@@ -51,7 +51,7 @@ final class SetlistService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             loadFromCache(groupId: groupId)
             return
@@ -66,7 +66,7 @@ final class SetlistService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка загрузки сетлистов: \(error.localizedDescription)"
+                        self.errorMessage = "Error loading setlists: \(error.localizedDescription)"
                         self.loadFromCache(groupId: groupId)
                         return
                     }
@@ -75,14 +75,14 @@ final class SetlistService: ObservableObject {
                         let items = docs.compactMap { try? $0.data(as: Setlist.self) }
                         self.setlists = items
                         
-                        // Сохраняем в кэш
+                        // Save to cache
                         CacheService.shared.cacheSetlists(items, forGroupId: groupId)
                     }
                 }
             }
     }
     
-    // Загрузка из кэша
+    // Load from cache
     private func loadFromCache(groupId: String) {
         if let cachedSetlists = CacheService.shared.getCachedSetlists(forGroupId: groupId) {
             self.setlists = cachedSetlists
@@ -102,7 +102,7 @@ final class SetlistService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             errorMessage = "Cannot add setlists in offline mode"
             isLoading = false
@@ -118,7 +118,7 @@ final class SetlistService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка добавления сетлиста: \(error.localizedDescription)"
+                        self.errorMessage = "Error adding setlist: \(error.localizedDescription)"
                         completion(false)
                     } else {
                         self.fetchSetlists(for: setlist.groupId)
@@ -129,7 +129,7 @@ final class SetlistService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации сетлиста: \(error)"
+                self.errorMessage = "Serialization error: \(error)"
                 completion(false)
             }
         }
@@ -144,7 +144,7 @@ final class SetlistService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             errorMessage = "Cannot update setlists in offline mode"
             isLoading = false
@@ -160,7 +160,7 @@ final class SetlistService: ObservableObject {
                     self.isLoading = false
                     
                     if let error = error {
-                        self.errorMessage = "Ошибка обновления сетлиста: \(error.localizedDescription)"
+                        self.errorMessage = "Error updating setlist: \(error.localizedDescription)"
                         completion(false)
                     } else {
                         self.fetchSetlists(for: setlist.groupId)
@@ -171,7 +171,7 @@ final class SetlistService: ObservableObject {
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Ошибка сериализации: \(error)"
+                self.errorMessage = "Serialization error: \(error)"
                 completion(false)
             }
         }
@@ -183,7 +183,7 @@ final class SetlistService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Проверяем соединение с сетью
+        // Check network connection
         if isOfflineMode {
             errorMessage = "Cannot delete setlists in offline mode"
             isLoading = false
@@ -197,7 +197,7 @@ final class SetlistService: ObservableObject {
                 self.isLoading = false
                 
                 if let error = error {
-                    self.errorMessage = "Ошибка удаления сетлиста: \(error.localizedDescription)"
+                    self.errorMessage = "Error deleting setlist: \(error.localizedDescription)"
                 } else if let groupId = AppState.shared.user?.groupId {
                     self.fetchSetlists(for: groupId)
                 }
@@ -205,7 +205,7 @@ final class SetlistService: ObservableObject {
         }
     }
     
-    // Получение сетлиста по ID
+    // Get setlist by ID
     func getSetlist(by id: String) -> Setlist? {
         return setlists.first { $0.id == id }
     }

@@ -18,24 +18,24 @@ struct PhoneVerificationView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Подтверждение номера")
+            Text("Phone Verification")
                 .font(.title.bold())
                 .padding(.top)
 
-            TextField("Номер телефона", text: $phoneNumber)
+            TextField("Phone number", text: $phoneNumber)
                 .keyboardType(.phonePad)
                 .textFieldStyle(.roundedBorder)
 
-            Button("Отправить код") {
+            Button("Send code") {
                 sendCode()
             }
 
             if verificationID != nil {
-                TextField("Код из SMS", text: $verificationCode)
+                TextField("SMS code", text: $verificationCode)
                     .keyboardType(.numberPad)
                     .textFieldStyle(.roundedBorder)
 
-                Button("Подтвердить") {
+                Button("Verify") {
                     verifyCode()
                 }
             }
@@ -46,7 +46,7 @@ struct PhoneVerificationView: View {
             }
 
             if isVerified {
-                Text("Телефон подтверждён ✅")
+                Text("Phone verified ✅")
                     .foregroundColor(.green)
             }
 

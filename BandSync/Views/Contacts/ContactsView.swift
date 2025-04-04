@@ -10,14 +10,14 @@ struct ContactsView: View {
     @State private var selectedCategory: String? = nil
     @State private var isLoading = false
     
-    // Категории контактов
-    private let categories = ["Все", "Музыканты", "Организаторы", "Площадки", "Другие"]
+    // Contact categories
+    private let categories = ["All", "Musicians", "Organizers", "Venues", "Others"]
     
-    // Отфильтрованные контакты
+    // Filtered contacts
     private var filteredContacts: [Contact] {
         var result = contactService.contacts
         
-        // Фильтрация по поиску
+        // Filter by search
         if !searchText.isEmpty {
             result = result.filter { contact in
                 contact.name.lowercased().contains(searchText.lowercased()) ||
@@ -26,22 +26,22 @@ struct ContactsView: View {
             }
         }
         
-        // Фильтрация по категории
-        if let category = selectedCategory, category != "Все" {
+        // Filter by category
+        if let category = selectedCategory, category != "All" {
             result = result.filter { $0.role == category }
         }
         
         return result
     }
     
-    // Группировка контактов по первой букве
+    // Group contacts by first letter
     private var groupedContacts: [String: [Contact]] {
         Dictionary(grouping: filteredContacts) { contact in
             String(contact.name.prefix(1).uppercased())
         }
     }
     
-    // Упорядоченные ключи групп
+    // Sorted group keys
     private var sortedKeys: [String] {
         groupedContacts.keys.sorted()
     }
@@ -50,7 +50,7 @@ struct ContactsView: View {
         NavigationView {
             ZStack {
                 VStack(spacing: 0) {
-                    // Секция с категориями
+                    // Categories section
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 15) {
                             ForEach(categories, id: \.self) { category in
@@ -72,7 +72,7 @@ struct ContactsView: View {
                     }
                     .background(Color.gray.opacity(0.1))
                     
-                    // Список контактов
+                    // Contacts list
                     List {
                         ForEach(sortedKeys, id: \.self) { key in
                             Section(header: Text(key)) {
@@ -94,7 +94,7 @@ struct ContactsView: View {
                         }
                         
                         if filteredContacts.isEmpty {
-                            Text("Нет контактов")
+                            Text("No contacts")
                                 .foregroundColor(.gray)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
@@ -103,7 +103,7 @@ struct ContactsView: View {
                     .listStyle(PlainListStyle())
                 }
                 
-                // Отображение индикатора загрузки
+                // Show loading indicator
                 if isLoading {
                     ProgressView()
                         .scaleEffect(1.5)
@@ -112,21 +112,21 @@ struct ContactsView: View {
                         .cornerRadius(10)
                 }
             }
-            .navigationTitle("Контакты")
-            .searchable(text: $searchText, prompt: "Поиск контактов")
+            .navigationTitle("Contacts")
+            .searchable(text: $searchText, prompt: "Search contacts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button(action: {
                             showAddContact = true
                         }) {
-                            Label("Добавить контакт", systemImage: "person.badge.plus")
+                            Label("Add contact", systemImage: "person.badge.plus")
                         }
                         
                         Button(action: {
                             showImportContacts = true
                         }) {
-                            Label("Импорт из контактов", systemImage: "person.crop.circle.badge.plus")
+                            Label("Import from contacts", systemImage: "person.crop.circle.badge.plus")
                         }
                     } label: {
                         Image(systemName: "plus")
@@ -150,7 +150,7 @@ struct ContactsView: View {
         }
     }
     
-    // Загрузка контактов
+    // Load contacts
     private func loadContacts() {
         isLoading = true
         
@@ -162,44 +162,44 @@ struct ContactsView: View {
         }
     }
     
-    // Импорт контакта из системного контакта
+    // Import contact from system contact
     private func importSystemContact(_ contact: CNContact) {
         guard let groupId = AppState.shared.user?.groupId else { return }
         
-        // Получаем имя
+        // Get name
         let firstName = contact.givenName
         let lastName = contact.familyName
         let fullName = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
         
-        // Получаем телефон
+        // Get phone
         var phoneNumber = ""
         if let phone = contact.phoneNumbers.first?.value.stringValue {
             phoneNumber = phone
         }
         
-        // Получаем email
+        // Get email
         var emailAddress = ""
         if let email = contact.emailAddresses.first?.value as String? {
             emailAddress = email
         }
         
-        // Создаем новый контакт
+        // Create new contact
         let newContact = Contact(
             name: fullName,
             email: emailAddress,
             phone: phoneNumber,
-            role: "Другие", // По умолчанию
+            role: "Others", // Default
             groupId: groupId
         )
         
-        // Добавляем контакт
+        // Add contact
         contactService.addContact(newContact) { _ in
-            // Обновление завершено
+            // Update completed
         }
     }
 }
 
-// Вспомогательный компонент для кнопок категорий
+// Helper component for category buttons
 struct CategoryButton: View {
     let title: String
     let isSelected: Bool

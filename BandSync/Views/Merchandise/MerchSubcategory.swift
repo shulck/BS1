@@ -9,29 +9,29 @@
 import Foundation
 
 enum MerchSubcategory: String, Codable, CaseIterable, Identifiable {
-    // Подкатегории для одежды
-    case tshirt = "Футболка"
-    case hoodie = "Худи"
-    case jacket = "Куртка"
-    case cap = "Кепка"
+    // Subcategories for clothing
+    case tshirt = "T-shirt"
+    case hoodie = "Hoodie"
+    case jacket = "Jacket"
+    case cap = "Cap"
 
-    // Подкатегории для музыки
-    case vinyl = "Виниловая пластинка"
+    // Subcategories for music
+    case vinyl = "Vinyl Record"
     case cd = "CD"
-    case tape = "Кассета"
+    case tape = "Tape"
 
-    // Подкатегории для аксессуаров
-    case poster = "Постер"
-    case sticker = "Стикер"
-    case pin = "Значок"
-    case keychain = "Брелок"
+    // Subcategories for accessories
+    case poster = "Poster"
+    case sticker = "Sticker"
+    case pin = "Pin"
+    case keychain = "Keychain"
 
-    // Другое
-    case other = "Другое"
+    // Other
+    case other = "Other"
 
     var id: String { rawValue }
 
-    // Добавляем свойство icon, которое используется в приложении
+    // Add icon property used in the app
     var icon: String {
         switch self {
         case .tshirt: return "tshirt"
@@ -49,7 +49,7 @@ enum MerchSubcategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    // Получение подкатегорий для конкретной категории
+    // Get subcategories for a specific category
     static func subcategories(for category: MerchCategory) -> [MerchSubcategory] {
         switch category {
         case .clothing:

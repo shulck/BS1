@@ -1,10 +1,10 @@
 // FinanceRecord.swift
-// Обновлённая модель записи с поддержкой строковой категории
+// Updated record model with string category support
 
 import Foundation
 import FirebaseFirestore
 
-// Добавляем явный импорт для устранения неоднозначности
+// Add explicit import to resolve ambiguity
 import SwiftUI
 
 struct FinanceRecord: Identifiable, Codable, Equatable {
@@ -38,7 +38,7 @@ struct FinanceRecord: Identifiable, Codable, Equatable {
         self.groupId = groupId
     }
 
-    // Конструктор для поддержки FinanceCategory
+    // Constructor to support FinanceCategory
     init(id: String = UUID().uuidString,
          type: FinanceType,
          amount: Double,

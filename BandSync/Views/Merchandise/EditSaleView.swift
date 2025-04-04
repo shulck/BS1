@@ -24,9 +24,9 @@ struct EditSaleView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Информация о товаре")) {
+                Section(header: Text("Item information")) {
                     HStack {
-                        Text("Товар")
+                        Text("Item")
                         Spacer()
                         Text(item.name)
                             .foregroundColor(.secondary)
@@ -34,14 +34,14 @@ struct EditSaleView: View {
 
                     if let subcategory = item.subcategory {
                         HStack {
-                            Text("Категория")
+                            Text("Category")
                             Spacer()
                             Text("\(item.category.rawValue) • \(subcategory.rawValue)")
                                 .foregroundColor(.secondary)
                         }
                     } else {
                         HStack {
-                            Text("Категория")
+                            Text("Category")
                             Spacer()
                             Text(item.category.rawValue)
                                 .foregroundColor(.secondary)
@@ -49,32 +49,32 @@ struct EditSaleView: View {
                     }
 
                     HStack {
-                        Text("Цена")
+                        Text("Price")
                         Spacer()
                         Text("\(Int(item.price)) EUR")
                             .foregroundColor(.secondary)
                     }
 
                     HStack {
-                        Text("Дата продажи")
+                        Text("Sale date")
                         Spacer()
                         Text(formattedDate)
                             .foregroundColor(.secondary)
                     }
                 }
 
-                Section(header: Text("Детали продажи")) {
+                Section(header: Text("Sale details")) {
                     if item.category == .clothing {
-                        Picker("Размер", selection: $size) {
+                        Picker("Size", selection: $size) {
                             ForEach(["S", "M", "L", "XL", "XXL"], id: \.self) { size in
                                 Text(size)
                             }
                         }
                     }
 
-                    Stepper("Количество: \(quantity)", value: $quantity, in: 1...999)
+                    Stepper("Quantity: \(quantity)", value: $quantity, in: 1...999)
 
-                    Toggle("Это подарок", isOn: $isGift)
+                    Toggle("This is a gift", isOn: $isGift)
                         .onChange(of: isGift) { newValue in
                             if newValue {
                                 channel = .gift
@@ -84,7 +84,7 @@ struct EditSaleView: View {
                         }
 
                     if !isGift {
-                        Picker("Канал продаж", selection: $channel) {
+                        Picker("Sales channel", selection: $channel) {
                             ForEach(MerchSaleChannel.allCases.filter { $0 != .gift }) {
                                 Text($0.rawValue).tag($0)
                             }
@@ -92,10 +92,10 @@ struct EditSaleView: View {
                     }
 
                     HStack {
-                        Text("Итого")
+                        Text("Total")
                         Spacer()
                         if isGift {
-                            Text("Подарок")
+                            Text("Gift")
                                 .bold()
                                 .foregroundColor(.green)
                         } else {
@@ -111,30 +111,30 @@ struct EditSaleView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text("Удалить продажу")
+                            Text("Delete sale")
                             Spacer()
                         }
                     }
                 }
             }
-            .alert("Удалить продажу?", isPresented: $showDeleteConfirmation) {
-                Button("Отмена", role: .cancel) {}
-                Button("Удалить", role: .destructive) {
+            .alert("Delete sale?", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
                     deleteSale()
                 }
             }
-            .navigationTitle("Редактировать продажу")
+            .navigationTitle("Edit sale")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         updateSale()
                     }
                     .disabled(isUpdating || !isChanged)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена", role: .cancel) {
+                    Button("Cancel", role: .cancel) {
                         dismiss()
                     }
                 }
@@ -142,7 +142,7 @@ struct EditSaleView: View {
             .overlay(
                 Group {
                     if isUpdating {
-                        ProgressView("Обновление...")
+                        ProgressView("Updating...")
                             .progressViewStyle(CircularProgressViewStyle())
                             .padding()
                             .background(Color.white.opacity(0.8))
@@ -173,18 +173,18 @@ struct EditSaleView: View {
     private func updateSale() {
         isUpdating = true
 
-        // Сначала отменим старую продажу
+        // First cancel the old sale
         MerchService.shared.cancelSale(sale, item: item) { success in
             if success {
-                // Затем создадим новую с обновленными данными
-                // Если это подарок, принудительно устанавливаем канал gift
+                // Then create a new one with updated data
+                // If it's a gift, forcibly set the channel to gift
                 let finalChannel = isGift ? MerchSaleChannel.gift : channel
                 MerchService.shared.recordSale(item: item, size: size, quantity: quantity, channel: finalChannel)
                 isUpdating = false
                 dismiss()
             } else {
                 isUpdating = false
-                // Тут можно добавить оповещение об ошибке
+                // Here you can add an error notification
             }
         }
     }
