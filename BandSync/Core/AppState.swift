@@ -14,12 +14,29 @@ final class AppState: ObservableObject {
     @Published var isOffline: Bool = false
     
     // State transitions
-    private enum State {
+    private enum State: Equatable {
         case initializing
         case authenticating
         case authenticated(UserModel)
         case unauthenticated
         case error(String)
+        
+        static func == (lhs: AppState.State, rhs: AppState.State) -> Bool {
+            switch (lhs, rhs) {
+            case (.initializing, .initializing):
+                return true
+            case (.authenticating, .authenticating):
+                return true
+            case (.unauthenticated, .unauthenticated):
+                return true
+            case (.authenticated(let lhsUser), .authenticated(let rhsUser)):
+                return lhsUser.id == rhsUser.id
+            case (.error(let lhsMsg), .error(let rhsMsg)):
+                return lhsMsg == rhsMsg
+            default:
+                return false
+            }
+        }
     }
     
     // Current app state (internal)

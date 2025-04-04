@@ -112,7 +112,7 @@ struct AdminPanelView: View {
             }
             .sheet(isPresented: $showExportSheet) {
                 if let data = exportData {
-                    ShareSheet(items: [data])
+                    DocumentShareSheet(items: [data])
                 }
             }
             
@@ -206,14 +206,4 @@ struct AdminPanelView: View {
     }
 }
 
-// ShareSheet for exporting data
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
+// Используем DocumentShareSheet из Views/Utils/ShareSheet.swift вместо определения нового ShareSheet

@@ -8,14 +8,17 @@ struct MainTabView: View {
     @State private var inaccessibleModule: ModuleType?
     @State private var previousValidTab = 4 // Default to More tab
     
-    // Map tab indices to modules
-    private let tabModules: [Int: ModuleType] = [
-        0: .calendar,
-        1: .finances,
-        2: .merchandise,
-        3: .chats,
-        4: nil // More tab has no direct module
-    ]
+    // Map tab indices to modules - обновленный подход
+    private func moduleForTab(_ tab: Int) -> ModuleType? {
+        switch tab {
+        case 0: return .calendar
+        case 1: return .finances
+        case 2: return .merchandise
+        case 3: return .chats
+        case 4: return nil // More tab has no direct module
+        default: return nil
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -114,7 +117,7 @@ struct MainTabView: View {
         }
         
         // Get module for selected tab
-        guard let module = tabModules[newTab] else {
+        guard let module = moduleForTab(newTab) else {
             previousValidTab = newTab
             return
         }
@@ -163,7 +166,7 @@ struct MainTabView: View {
         }
         
         // Check module access
-        if let module = tabModules[tab] {
+        if let module = moduleForTab(tab) {
             return permissionService.currentUserHasAccess(to: module)
         }
         
@@ -174,7 +177,7 @@ struct MainTabView: View {
     private func findFirstValidTab() -> Int {
         // Check each tab in order
         for tabIndex in 0...3 {
-            if let module = tabModules[tabIndex],
+            if let module = moduleForTab(tabIndex),
                permissionService.currentUserHasAccess(to: module) {
                 return tabIndex
             }
