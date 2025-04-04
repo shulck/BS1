@@ -5,14 +5,6 @@
 //  Created by Oleksandr Kuziakin on 31.03.2025.
 //
 
-
-//
-//  CacheService.swift
-//  BandSync
-//
-//  Created by Claude AI on 31.03.2025.
-//
-
 import Foundation
 import FirebaseFirestore
 
@@ -20,19 +12,16 @@ final class CacheService {
     static let shared = CacheService()
     
     private let cacheDirectory: URL
-    private let encoder: JSONEncoder = {
-        let e = JSONEncoder()
-        e.dateEncodingStrategy = .iso8601
-        return e
-    }()
-
-    private let decoder: JSONDecoder = {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
-    }()
+    
+    // Используем отдельные кодировщики, не связанные с Firestore
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
     
     private init() {
+        // Настройка кодировщиков для правильной работы с датами
+        encoder.dateEncodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .iso8601
+        
         // Get cache directory
         cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
             .appendingPathComponent("BandSyncCache")
@@ -49,13 +38,46 @@ final class CacheService {
     
     // MARK: - Common caching methods
     
-    // Save data to cache
+    // Save data to cache - модифицированный метод для обработки Firebase типов
     func cacheData<T: Encodable>(_ data: T, forKey key: String) {
         do {
-            let data = try encoder.encode(data)
-            try data.write(to: cacheDirectory.appendingPathComponent(key))
+            // Попытка прямого кодирования для простых типов
+            let jsonData = try encoder.encode(data)
+            try jsonData.write(to: cacheDirectory.appendingPathComponent(key))
         } catch {
-            print("Error saving data to cache for key \(key): \(error.localizedDescription)")
+            // Если прямое кодирование не удалось, используем альтернативный подход
+            print("Standard encoding failed, trying alternative method for key \(key): \(error.localizedDescription)")
+            do {
+                let fileURL = cacheDirectory.appendingPathComponent(key)
+                
+                // Преобразуем данные в JSON строку (без Firebase типов)
+                if let array = data as? [Any] {
+                    // Для массивов
+                    let jsonData = try JSONSerialization.data(withJSONObject: array, options: .prettyPrinted)
+                    try jsonData.write(to: fileURL)
+                } else if let jsonObject = data as? [String: Any] {
+                    // Для словарей
+                    let jsonData = try JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted)
+                    try jsonData.write(to: fileURL)
+                } else {
+                    // Для других объектов - пытаемся преобразовать в словарь
+                    let mirror = Mirror(reflecting: data)
+                    var dict = [String: Any]()
+                    
+                    for child in mirror.children {
+                        if let key = child.label {
+                            if let value = child.value as? Encodable {
+                                dict[key] = value
+                            }
+                        }
+                    }
+                    
+                    let jsonData = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+                    try jsonData.write(to: fileURL)
+                }
+            } catch {
+                print("Error saving data to cache for key \(key): \(error.localizedDescription)")
+            }
         }
     }
     

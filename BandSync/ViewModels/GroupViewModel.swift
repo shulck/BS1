@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import FirebaseFirestore
+import FirebaseAuth
 
 final class GroupViewModel: ObservableObject {
     @Published var groupName = ""
