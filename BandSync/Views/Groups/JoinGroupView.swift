@@ -1,24 +1,15 @@
-//
-//  JoinGroupView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
-//
-//  JoinGroupView.swift
-//  BandSync
-//
-//  Created by Claude AI on 31.03.2025.
-//
-
 import SwiftUI
 
 struct JoinGroupView: View {
     @StateObject private var viewModel = GroupViewModel()
-    @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) var dismiss
+    
+    // Completion handler to inform parent view of result
+    var onCompletion: ((Result<Void, Error>) -> Void)?
+    
+    init(onCompletion: ((Result<Void, Error>) -> Void)? = nil) {
+        self.onCompletion = onCompletion
+    }
     
     var body: some View {
         NavigationView {
@@ -26,13 +17,25 @@ struct JoinGroupView: View {
                 Section(header: Text("Group code")) {
                     TextField("Enter invitation code", text: $viewModel.groupCode)
                         .autocapitalization(.allCharacters)
+                        .disableAutocorrection(true)
+                        .onChange(of: viewModel.groupCode) { newValue in
+                            // Format and validate code
+                            viewModel.groupCode = newValue.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                }
+                
+                if !viewModel.isValidCode && !viewModel.groupCode.isEmpty {
+                    Text("Group code should be 6 characters")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .padding(.horizontal)
                 }
                 
                 Section {
                     Button("Join") {
                         joinGroup()
                     }
-                    .disabled(viewModel.groupCode.isEmpty || viewModel.isLoading)
+                    .disabled(!isJoinEnabled || viewModel.isLoading)
                 }
                 
                 if viewModel.isLoading {
@@ -65,20 +68,36 @@ struct JoinGroupView: View {
                     }
                 }
             }
+            .alert(isPresented: $viewModel.showSuccessAlert) {
+                Alert(
+                    title: Text("Success"),
+                    message: Text("Join request sent successfully! Waiting for approval."),
+                    dismissButton: .default(Text("OK")) {
+                        dismiss()
+                        onCompletion?(.success(()))
+                    }
+                )
+            }
         }
+    }
+    
+    // Enable join button only for valid codes
+    private var isJoinEnabled: Bool {
+        return viewModel.isValidCode && !viewModel.groupCode.isEmpty
     }
     
     private func joinGroup() {
         viewModel.joinGroup { result in
             switch result {
             case .success:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    appState.refreshAuthState()
-                    dismiss()
-                }
-            case .failure:
-                // Error will already be displayed through viewModel.errorMessage
-                break
+                // Update UI state
+                viewModel.showSuccessAlert = true
+                
+                // Notify parent view if needed (will be called when alert is dismissed)
+                // onCompletion?(.success(()))
+            case .failure(let error):
+                // Notify parent view
+                onCompletion?(.failure(error))
             }
         }
     }

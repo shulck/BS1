@@ -1,24 +1,15 @@
-//
-//  CreateGroupView.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
-
-//
-//  CreateGroupView.swift
-//  BandSync
-//
-//  Created by Claude AI on 31.03.2025.
-//
-
 import SwiftUI
 
 struct CreateGroupView: View {
     @StateObject private var viewModel = GroupViewModel()
-    @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) var dismiss
+    
+    // Completion handler to inform parent view of result
+    var onCompletion: ((Result<Void, Error>) -> Void)?
+    
+    init(onCompletion: ((Result<Void, Error>) -> Void)? = nil) {
+        self.onCompletion = onCompletion
+    }
     
     var body: some View {
         NavigationView {
@@ -26,6 +17,7 @@ struct CreateGroupView: View {
                 Section(header: Text("Group information")) {
                     TextField("Group name", text: $viewModel.groupName)
                         .autocapitalization(.words)
+                        .disableAutocorrection(true)
                 }
                 
                 Section {
@@ -65,6 +57,16 @@ struct CreateGroupView: View {
                     }
                 }
             }
+            .alert(isPresented: $viewModel.showSuccessAlert) {
+                Alert(
+                    title: Text("Success"),
+                    message: Text("Group created successfully! You are now the admin of this group."),
+                    dismissButton: .default(Text("OK")) {
+                        dismiss()
+                        onCompletion?(.success(()))
+                    }
+                )
+            }
         }
     }
     
@@ -72,13 +74,14 @@ struct CreateGroupView: View {
         viewModel.createGroup { result in
             switch result {
             case .success:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    appState.refreshAuthState()
-                    dismiss()
-                }
-            case .failure:
-                // Error will already be displayed through viewModel.errorMessage
-                break
+                // Update UI state
+                viewModel.showSuccessAlert = true
+                
+                // Notify parent view if needed (will be called when alert is dismissed)
+                // onCompletion?(.success(()))
+            case .failure(let error):
+                // Notify parent view
+                onCompletion?(.failure(error))
             }
         }
     }

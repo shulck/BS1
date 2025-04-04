@@ -1,10 +1,3 @@
-//
-//  CustomDatePicker.swift
-//  BandSync
-//
-//  Created by Claude AI on 03.04.2025.
-//
-
 import SwiftUI
 
 // Helper structure for marking dates in the calendar
@@ -59,6 +52,12 @@ struct CalendarDateMarker: View {
     }
 }
 
+struct DateValue: Identifiable {
+    let id = UUID().uuidString
+    let day: Int
+    let date: Date
+}
+
 struct CustomDatePicker: View {
     @Binding var selectedDate: Date
     let events: [Event]
@@ -107,12 +106,13 @@ struct CustomDatePicker: View {
             }
             .padding(.horizontal)
             
-            // Days of the week
+            // Days of the week (fixed to use correct order from calendar)
             HStack(spacing: 0) {
-                ForEach(daysOfWeek(), id: \.self) { day in
+                ForEach(Array(getDaysOfWeek().enumerated()), id: \.element) { index, day in
                     Text(day)
                         .font(.callout)
                         .fontWeight(.semibold)
+                        .foregroundColor(isWeekend(at: index) ? .red : .primary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -186,14 +186,38 @@ struct CustomDatePicker: View {
         return dateFormatter.string(from: date)
     }
     
-    // Get abbreviated names of the days of the week
-    private func daysOfWeek() -> [String] {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale.current
-        return dateFormatter.shortWeekdaySymbols
+    // Fixed: Get correct days of week based on calendar's first weekday
+    private func getDaysOfWeek() -> [String] {
+        let calendar = Calendar.current
+        let weekdaySymbols = calendar.shortWeekdaySymbols
+        
+        // Get the first day of the week according to the user's locale (1-based, 1=Sunday, 2=Monday, etc.)
+        let firstWeekday = calendar.firstWeekday
+        
+        // Rearrange the weekday symbols according to the first day of the week
+        var arrangedWeekdaySymbols = [String]()
+        for i in 0..<7 {
+            let index = (firstWeekday - 1 + i) % 7
+            arrangedWeekdaySymbols.append(weekdaySymbols[index])
+        }
+        
+        return arrangedWeekdaySymbols
     }
     
-    // Extract dates of the current month
+    // Helper to determine if a day is a weekend based on its position in the week
+    private func isWeekend(at index: Int) -> Bool {
+        let calendar = Calendar.current
+        let firstWeekday = calendar.firstWeekday
+        
+        // Calculate actual weekday (1-based, where 1 is Sunday)
+        let weekday = (firstWeekday + index) % 7
+        let actualWeekday = weekday == 0 ? 7 : weekday
+        
+        // In most locales, Saturday (7) and Sunday (1) are weekends
+        return actualWeekday == 1 || actualWeekday == 7
+    }
+    
+    // Extract dates of the current month - FIXED to properly align with days of week
     private func extractDates() -> [DateValue] {
         var dateValues = [DateValue]()
         
@@ -207,12 +231,15 @@ struct CustomDatePicker: View {
         // Get the number of days in the month
         let range = calendar.range(of: .day, in: .month, for: firstDayOfMonth)!
         
-        // Get the weekday of the first day of the month (0 = Sunday, 1 = Monday, etc.)
-        var firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) - 1
-        if firstWeekday == 0 { firstWeekday = 7 } // Move Sunday to the end
+        // Get the weekday of the first day (1-7, where 1 is Sunday, 2 is Monday, etc.)
+        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth)
         
-        // Add empty cells for the days of the previous month
-        for _ in 0..<firstWeekday-1 {
+        // Calculate the number of empty cells needed before the first day
+        // We need to adjust based on the calendar's first weekday
+        let firstWeekdayIndex = (firstWeekday + 7 - calendar.firstWeekday) % 7
+        
+        // Add empty cells for days of the previous month
+        for _ in 0..<firstWeekdayIndex {
             dateValues.append(DateValue(day: -1, date: Date()))
         }
         
@@ -225,13 +252,6 @@ struct CustomDatePicker: View {
         
         return dateValues
     }
-}
-
-// Helper structure for representing a date in the calendar
-struct DateValue: Identifiable {
-    let id = UUID().uuidString
-    let day: Int
-    let date: Date
 }
 
 // Extension for converting a Hex string to Color
