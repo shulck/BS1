@@ -5,17 +5,8 @@
 //  Created by Oleksandr Kuziakin on 31.03.2025.
 //
 
-
-//
-//  ChatService.swift
-//  BandSync
-//
-//  Created by Oleksandr Kuziakin on 31.03.2025.
-//
-
 import Foundation
 import FirebaseFirestore
-
 
 final class ChatService: ObservableObject {
     static let shared = ChatService()
@@ -67,10 +58,11 @@ final class ChatService: ObservableObject {
     func createChat(name: String, type: ChatType, participants: [String], completion: @escaping (Bool) -> Void) {
         let chat = Chat(name: name, type: type, participants: participants, lastMessage: nil, lastMessageTime: nil)
         do {
-            _ = try db.collection("chats").addDocument(from: chat) { error in
+            try db.collection("chats").addDocument(from: chat) { error in
                 completion(error == nil)
             }
         } catch {
+            print("Error creating chat: \(error)")
             completion(false)
         }
     }

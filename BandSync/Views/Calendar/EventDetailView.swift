@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 struct EventDetailView: View {
     @StateObject private var setlistService = SetlistService.shared

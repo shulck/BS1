@@ -101,9 +101,10 @@ final class GroupViewModel: ObservableObject {
                             return
                         }
                         
-                        if let groupId = snapshot?.documents.first?.documentID {
+                        if let groupDocument = snapshot?.documents.first,
+                           let groupId: String? = Optional(groupDocument.documentID) {
                             // Update user with group ID
-                            UserService.shared.updateUserGroup(groupId: groupId) { result in
+                            UserService.shared.updateUserGroup(groupId: groupId!) { result in
                                 switch result {
                                 case .success:
                                     // Also update user role to Admin
@@ -115,8 +116,8 @@ final class GroupViewModel: ObservableObject {
                                             completion(.failure(error))
                                         } else {
                                             // Create default permissions for the new group
-                                            PermissionService.shared.createDefaultPermissions(for: groupId)
-                                            completion(.success(groupId))
+                                            PermissionService.shared.createDefaultPermissions(for: groupId!)
+                                            completion(.success(groupId!))
                                         }
                                     }
                                 case .failure(let error):
@@ -137,11 +138,10 @@ final class GroupViewModel: ObservableObject {
         }
     }
     
-    // Join an existing group by code
+    // Join an existing group
     func joinGroup(completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let userId = AuthService.shared.currentUserUID() else {
-            errorMessage = "You must be logged in"
-            completion(.failure(NSError(domain: "UserNotLoggedIn", code: -1, userInfo: [NSLocalizedDescriptionKey: "User is not logged in"])))
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Auth", code: -1, userInfo: [NSLocalizedDescriptionKey: "No authorized user"])))
             return
         }
         
@@ -207,7 +207,7 @@ final class GroupViewModel: ObservableObject {
         }
     }
     
-    // Helper method to find and join a group
+    // Find and join a group by invitation code
     private func findAndJoinGroup(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
         db.collection("groups")
             .whereField("code", isEqualTo: groupCode)
@@ -230,28 +230,29 @@ final class GroupViewModel: ObservableObject {
                 
                 let groupId = document.documentID
                 
-                // Check if user is already a member or pending
-                do {
-                    if let group = try document.data(as: GroupModel.self) {
-                        if group.members.contains(userId) {
-                            self.errorMessage = "You are already a member of this group"
-                            completion(.failure(NSError(domain: "AlreadyMember", code: -1, userInfo: [NSLocalizedDescriptionKey: "You are already a member of this group"])))
-                            return
-                        }
-                        
-                        if group.pendingMembers.contains(userId) {
-                            self.errorMessage = "Your request to join this group is already pending"
-                            completion(.failure(NSError(domain: "AlreadyPending", code: -1, userInfo: [NSLocalizedDescriptionKey: "Your request to join this group is already pending"])))
-                            return
-                        }
+                // Преобразуем группу в опциональный тип
+                let group: GroupModel? = try? document.data(as: GroupModel.self)
+                
+                // Проверяем опциональную группу
+                if let group = group {
+                    if group.members.contains(userId) {
+                        self.errorMessage = "You are already a member of this group"
+                        completion(.failure(NSError(domain: "AlreadyMember", code: -1, userInfo: [NSLocalizedDescriptionKey: "You are already a member of this group"])))
+                        return
                     }
-                } catch {
-                    self.errorMessage = "Error processing group data: \(error.localizedDescription)"
-                    completion(.failure(error))
+                    
+                    if group.pendingMembers.contains(userId) {
+                        self.errorMessage = "Your request to join this group is already pending"
+                        completion(.failure(NSError(domain: "AlreadyPending", code: -1, userInfo: [NSLocalizedDescriptionKey: "Your request to join this group is already pending"])))
+                        return
+                    }
+                } else {
+                    self.errorMessage = "Error processing group data"
+                    completion(.failure(NSError(domain: "GroupDataError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not parse group data"])))
                     return
                 }
                 
-                // Add user to pendingMembers
+                // Добавляем пользователя в ожидающие
                 self.db.collection("groups").document(groupId).updateData([
                     "pendingMembers": FieldValue.arrayUnion([userId])
                 ]) { error in
@@ -261,7 +262,7 @@ final class GroupViewModel: ObservableObject {
                     } else {
                         self.successMessage = "Join request sent. Waiting for confirmation."
                         
-                        // Update user's groupId
+                        // Обновляем groupId пользователя
                         UserService.shared.updateUserGroup(groupId: groupId) { result in
                             switch result {
                             case .success:
@@ -274,25 +275,6 @@ final class GroupViewModel: ObservableObject {
                     }
                 }
             }
-    }
-    
-    // Load group members
-    func loadGroupMembers(groupId: String) {
-        isLoading = true
-        
-        GroupService.shared.fetchGroup(by: groupId)
-        
-        // Subscribe to group updates
-        GroupService.shared.$group
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] group in
-                guard let self = self, let group = group else { return }
-                
-                self.isLoading = false
-                self.members = group.members
-                self.pendingMembers = group.pendingMembers
-            }
-            .store(in: &cancellables)
     }
     
     // Generate a unique 6-character code
@@ -317,3 +299,4 @@ final class GroupViewModel: ObservableObject {
         completion(.failure(error))
     }
 }
+
